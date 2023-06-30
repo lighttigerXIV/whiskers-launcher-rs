@@ -1,5 +1,5 @@
 [package]
-name = "simple-kl"
+name = "simple_kl_rs"
 version = "0.0.0"
 edition = "2021"
 description = "A crate containing all necessary code related to Simple Keyboard Launcher"
