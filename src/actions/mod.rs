@@ -29,6 +29,12 @@ pub struct ExtensionAction {
     pub args: String,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct RunCommandAction{
+    pub main_command: String,
+    pub args: String
+}
+
 impl OpenApp {
     pub fn new(desktop_path: String) -> Self {
         return OpenApp { desktop_path };
