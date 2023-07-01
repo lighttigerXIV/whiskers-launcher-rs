@@ -6,6 +6,7 @@ pub enum ResultAction {
     OpenInBrowser(OpenInBrowser),
     CopyToClipboard(CopyToClipboard),
     ExtensionAction(ExtensionAction),
+    RunCommandAction(RunCommandAction)
 }
 
 #[derive(Serialize, Deserialize, Debug)]
