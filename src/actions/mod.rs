@@ -6,7 +6,6 @@ pub enum ResultAction {
     OpenInBrowser(OpenInBrowser),
     CopyToClipboard(CopyToClipboard),
     ExtensionAction(ExtensionAction),
-    RunCommandAction(RunCommandAction)
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -26,18 +25,31 @@ pub struct CopyToClipboard {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ExtensionAction {
-    pub extension_name: String,
-    pub args: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct RunCommandAction{
-    pub main_command: String,
-    pub args: String
+    pub extension_id: String,
+    pub action: String,
+    pub args: Option<Vec<String>>,
 }
 
 impl OpenApp {
     pub fn new(desktop_path: String) -> Self {
         return OpenApp { desktop_path };
+    }
+}
+
+impl ExtensionAction {
+    pub fn new(extension_id: String, action: String) -> Self {
+        return ExtensionAction {
+            extension_id,
+            action,
+            args: None,
+        };
+    }
+
+    pub fn new_with_args(extension_id: String, action: String, args: Vec<String>) -> Self {
+        return ExtensionAction {
+            extension_id,
+            action,
+            args: Some(args),
+        };
     }
 }

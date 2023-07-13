@@ -3,6 +3,14 @@ use serde::Serialize;
 use serde::Deserialize;
 
 #[derive(Serialize, Deserialize, Debug)]
+pub enum SimpleKLResult{
+    Text(TextResult),
+    IconWithText(IconWithTextResult),
+    TitleAndDescription(TitleAndDescriptionResult),
+    IconWithTitleAndDescription(IconWithTitleAndDescriptionResult)
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct TextResult {
     pub text: String,
     pub action: ResultAction,
@@ -62,3 +70,4 @@ impl IconWithTitleAndDescriptionResult {
         };
     }
 }
+
