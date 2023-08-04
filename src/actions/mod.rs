@@ -6,6 +6,7 @@ pub enum ResultAction {
     OpenInBrowser(OpenInBrowser),
     CopyToClipboard(CopyToClipboard),
     ExtensionAction(ExtensionAction),
+    DoNothingAction(DoNothingAction)
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -29,6 +30,9 @@ pub struct ExtensionAction {
     pub action: String,
     pub args: Option<Vec<String>>,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct DoNothingAction{}
 
 impl OpenApp {
     pub fn new(desktop_path: String) -> Self {

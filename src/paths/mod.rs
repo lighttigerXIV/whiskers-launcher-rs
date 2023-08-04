@@ -54,7 +54,66 @@ pub fn get_extensions_path() -> String {
     };
 }
 
-pub fn get_extension_icon(extension_id: String) -> String {
+/// Gets the resources folder path.
+///
+/// Linux: `$HOME/.local/share/simple-kl/resources`
+///
+/// Windows: `C:\Program Files x64\simple-kl\resources`
+pub fn get_resources_path() -> String {
+    return format!("{}/.local/share/simple-kl/resources", get_home_path());
+}
+
+/// Gets the communit themes folder path.
+///
+/// Linux: `$HOME/.local/share/simple-kl/resources/themes`
+///
+/// Windows: `C:\Program Files x64\simple-kl\resources\themes`
+pub fn get_community_themes_path() -> String {
+    return format!(
+        "{}/.local/share/simple-kl/resources/themes",
+        get_home_path()
+    );
+}
+
+/// Gets the communit themes file path.
+///
+/// Linux: `$HOME/.local/share/simple-kl/resources/themes`
+///
+/// Windows: `C:\Program Files x64\simple-kl\resources\themes`
+pub fn get_community_themes_file_path() -> String {
+    return format!(
+        "{}/.local/share/simple-kl/resources/themes/themes.json",
+        get_home_path()
+    );
+}
+
+pub fn get_temp_themes_path() -> String {
+    return format!("{}/themes", get_temp_folder_path());
+}
+
+pub fn get_community_extensions_path() -> String {
+    return format!(
+        "{}/.local/share/simple-kl/resources/extensions",
+        get_home_path()
+    );
+}
+
+pub fn get_community_extensions_file_path() -> String {
+    return format!(
+        "{}/.local/share/simple-kl/resources/extensions/extensions.json",
+        get_home_path()
+    );
+}
+
+///Gets a icon to use on the result
+///
+///**Note:** Use `@` to make the location relative to the extension folder. If not it will use the location as an absolute path.
+///
+///Usage Example:
+///```no_run
+///get_extension_icon(extension_id, "@src/images/icon.svg".to_string())
+///```
+pub fn get_extension_icon(extension_id: String, location: String) -> String {
     if let Ok(folders) = fs::read_dir(&get_extensions_path()) {
         for folder in folders {
             if let Ok(folder) = folder {
@@ -69,13 +128,16 @@ pub fn get_extension_icon(extension_id: String) -> String {
                     let manifest: ExtensionManifest = serde_json::from_str(&manifest_json).unwrap();
 
                     if manifest.id == extension_id {
-                        return match manifest.icon.starts_with("./") {
+                        return match location.starts_with("@") {
                             true => format!(
-                                "{}/{}",
-                                get_extension_path(manifest.id.clone()).unwrap(),
-                                manifest.icon.replace("./", "")
+                                "{}",
+                                location.replace(
+                                    "@",
+                                    (get_extension_path(manifest.id.clone()).unwrap() + "/")
+                                        .as_str()
+                                )
                             ),
-                            false => manifest.icon,
+                            false => location.to_string(),
                         };
                     }
                 }

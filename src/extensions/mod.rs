@@ -1,12 +1,16 @@
 use crate::{
-    paths::{get_extension_parameters_path, get_extension_results_path},
+    paths::{
+        get_extension_parameters_path, get_extension_results_path, get_extensions_index_path,
+        get_extensions_path,
+    },
     results::SimpleKLResult,
+    settings::{ExtensionOptionSetting, ExtensionsSettings, Settings},
 };
 use serde::{Deserialize, Serialize};
 use std::{
-    fs::{File},
+    fs::{self, File},
     io::{Read, Write},
-    process::exit,
+    path::Path,
 };
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -50,8 +54,6 @@ pub fn return_results(results: Vec<SimpleKLResult>) {
     results_path_file
         .flush()
         .expect("Error closing extension results file");
-
-    exit(0);
 }
 
 impl Parameters {
@@ -79,7 +81,6 @@ pub struct ExtensionManifest {
     pub id: String,
     pub name: String,
     pub description: String,
-    pub icon: String,
     pub os: Vec<String>,
     pub keyword: String,
     pub settings: ExtensionSettings,
@@ -115,3 +116,129 @@ pub struct ExtensionShowCondition {
     pub value: String,
 }
 
+pub fn init_extensions() {
+    let extension_path = &get_extensions_path();
+    let mut extensions: Vec<ExtensionManifest> = Vec::new();
+
+    if !Path::new(extension_path).exists() {
+        fs::create_dir_all(extension_path).expect("Error creating extensions folder");
+    }
+
+    if let Ok(folders) = fs::read_dir(&get_extensions_path()) {
+        for folder in folders {
+            if let Ok(folder) = folder {
+                let folder_path = folder.path().into_os_string().into_string().unwrap();
+                let manifest_file_path = &format!("{}/manifest.json", folder_path);
+
+                if let Ok(mut manifest_file) = File::open(manifest_file_path) {
+                    let mut manifest_json = String::from("");
+                    manifest_file.read_to_string(&mut manifest_json).unwrap();
+
+                    let manifest: ExtensionManifest = serde_json::from_str(&manifest_json).unwrap();
+
+                    extensions.push(manifest);
+
+                    manifest_file.flush().unwrap();
+                }
+            }
+        }
+    }
+
+    let mut extension_file = File::create(get_extensions_index_path()).unwrap();
+    extension_file
+        .write_all(serde_json::to_string(&extensions).unwrap().as_bytes())
+        .unwrap();
+
+    let settings_extensions = Settings::current_settings().extensions;
+
+    let mut new_settings_extensions: Vec<ExtensionsSettings> = Vec::new();
+
+    for extension in extensions {
+        if !settings_extensions
+            .iter()
+            .any(|extension_setting| extension_setting.id == extension.id)
+        {
+            let mut any_settings: Vec<ExtensionOptionSetting> = Vec::new();
+            let mut linux_settings: Vec<ExtensionOptionSetting> = Vec::new();
+            let mut windows_settings: Vec<ExtensionOptionSetting> = Vec::new();
+
+            for any_setting in extension.settings.any {
+                any_settings.push(ExtensionOptionSetting {
+                    id: any_setting.id,
+                    current_value: any_setting.default_value,
+                })
+            }
+
+            for linux_setting in extension.settings.linux {
+                linux_settings.push(ExtensionOptionSetting {
+                    id: linux_setting.id,
+                    current_value: linux_setting.default_value,
+                })
+            }
+
+            for windows_setting in extension.settings.windows {
+                windows_settings.push(ExtensionOptionSetting {
+                    id: windows_setting.id,
+                    current_value: windows_setting.default_value,
+                })
+            }
+
+            new_settings_extensions.push(ExtensionsSettings {
+                id: extension.id.clone(),
+                keyword: extension.keyword.clone(),
+                settings: crate::settings::ExtensionSetting {
+                    any: any_settings,
+                    linux: linux_settings,
+                    windows: windows_settings,
+                },
+            })
+        } else {
+            let extension_settings = settings_extensions.iter().find(|e| e.id == extension.id);
+
+            match extension_settings {
+                Some(settings) => new_settings_extensions.push(ExtensionsSettings {
+                    id: settings.id.clone(),
+                    keyword: settings.keyword.clone(),
+                    settings: crate::settings::ExtensionSetting {
+                        any: settings.settings.any.clone(),
+                        linux: settings.settings.linux.clone(),
+                        windows: settings.settings.windows.clone(),
+                    },
+                }),
+                None => {}
+            }
+        }
+    }
+
+    let mut new_settings = Settings::current_settings();
+    new_settings.extensions = new_settings_extensions;
+
+    Settings::update(serde_json::to_string(&new_settings).expect("Error converting settings"))
+        .expect("Error pdating settings");
+}
+
+pub fn get_extensions() -> Vec<ExtensionManifest>{
+    let mut extensions: Vec<ExtensionManifest> = Vec::new();
+
+    if let Ok(folders) = fs::read_dir(&get_extensions_path()) {
+        for folder in folders {
+            if let Ok(folder) = folder {
+                let folder_path = folder.path().into_os_string().into_string().unwrap();
+                let manifest_file_path = &format!("{}/manifest.json", folder_path);
+
+                if let Ok(mut manifest_file) = File::open(manifest_file_path) {
+                    let mut manifest_json = String::from("");
+                    manifest_file.read_to_string(&mut manifest_json).unwrap();
+
+                    let manifest: ExtensionManifest = serde_json::from_str(&manifest_json).unwrap();
+
+                    extensions.push(manifest);
+
+                    manifest_file.flush().unwrap();
+                }
+            }
+        }
+    }
+
+    return extensions;
+}
