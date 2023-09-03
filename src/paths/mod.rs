@@ -88,7 +88,7 @@ pub fn get_community_themes_path() -> Option<PathBuf> {
 /// Windows: `C:\Program Files x64\simple-kl\resources\themes`
 pub fn get_community_themes_file_path() -> Option<PathBuf> {
     let mut path = get_community_themes_path()?;
-    path.push("themes.json");
+    path.push("themes.yml");
 
     return Some(path);
 }
@@ -109,7 +109,7 @@ pub fn get_community_extensions_directory() -> Option<PathBuf> {
 
 pub fn get_community_extensions_file_path() -> Option<PathBuf> {
     let mut path = get_community_extensions_directory()?;
-    path.push("extensions.json");
+    path.push("extensions.yml");
 
     return Some(path);
 }
@@ -127,14 +127,14 @@ pub fn get_extension_icon(extension_id: &str, location: &str) -> Option<PathBuf>
         for folder in folders {
             if let Ok(folder) = folder {
                 let mut manifest_file_path = folder.path();
-                manifest_file_path.push("manifest.json");
+                manifest_file_path.push("manifest.yml");
 
                 if let Ok(mut manifest_file) = File::open(manifest_file_path) {
-                    let mut manifest_json = String::from("");
-                    manifest_file.read_to_string(&mut manifest_json).unwrap();
+                    let mut manifest_yaml = String::from("");
+                    manifest_file.read_to_string(&mut manifest_yaml).unwrap();
                     manifest_file.flush().unwrap();
 
-                    let manifest: ExtensionManifest = serde_json::from_str(&manifest_json).unwrap();
+                    let manifest: ExtensionManifest = serde_yaml::from_str(&manifest_yaml).unwrap();
 
                     if manifest.id == extension_id {
 
@@ -167,14 +167,14 @@ pub fn get_extension_directory(extension_id: &str)-> Option<PathBuf>{
         for folder in folders {
             if let Ok(folder) = folder {
                 let mut manifest_file_path = folder.path();
-                manifest_file_path.push("manifest.json");
+                manifest_file_path.push("manifest.yml");
 
                 if let Ok(mut manifest_file) = File::open(manifest_file_path) {
-                    let mut manifest_json = String::from("");
-                    manifest_file.read_to_string(&mut manifest_json).unwrap();
+                    let mut manifest_yaml = String::from("");
+                    manifest_file.read_to_string(&mut manifest_yaml).unwrap();
                     manifest_file.flush().unwrap();
 
-                    let manifest: ExtensionManifest = serde_json::from_str(&manifest_json).unwrap();
+                    let manifest: ExtensionManifest = serde_yaml::from_str(&manifest_yaml).unwrap();
 
                     if manifest.id == extension_id {
                         return Some(folder.path())
@@ -208,18 +208,18 @@ pub fn get_extension_path(id: String) -> Option<PathBuf> {
         for folder in folders {
             if let Ok(folder) = folder {
                 let mut manifest_file_path = folder.path();
-                manifest_file_path.push("manifest.json");
+                manifest_file_path.push("manifest.yml");
 
                 if let Ok(mut manifest_file) = File::open(manifest_file_path) {
-                    let mut manifest_json = String::from("");
+                    let mut manifest_yaml = String::from("");
 
                     manifest_file
-                        .read_to_string(&mut manifest_json)
+                        .read_to_string(&mut manifest_yaml)
                         .expect("Error reading manifest file");
 
                     manifest_file.flush().expect("Error closing manifest file");
 
-                    let manifest: ExtensionManifest = serde_json::from_str(&manifest_json).unwrap();
+                    let manifest: ExtensionManifest = serde_yaml::from_str(&manifest_yaml).unwrap();
 
                     if manifest.id == id {
                         return Some(folder.path());
