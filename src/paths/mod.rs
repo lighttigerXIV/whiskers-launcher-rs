@@ -3,54 +3,57 @@ use std::{
     env,
     fs::{self, File},
     io::{Read, Write},
+    path::{Path, PathBuf},
 };
 
 use crate::extensions::ExtensionManifest;
 
-pub fn get_home_path() -> String {
-    return home_dir().unwrap().into_os_string().into_string().unwrap();
+pub fn get_home_path() -> Option<PathBuf> {
+    return home_dir();
 }
 
-pub fn get_settings_path() -> String {
+pub fn get_settings_path() -> Option<PathBuf> {
     return match env::consts::OS {
         "linux" => {
-            let home_path = get_home_path();
+            let mut home_path = get_home_path()?;
+            home_path.push(".config/simple-kl/settings.yml");
 
-            format!("{home_path}/.config/simple-kl/settings.json")
+            Some(home_path)
         }
-        _ => "".to_string(),
+        _ => None,
     };
 }
 
-pub fn get_apps_index_path() -> String {
+pub fn get_apps_index_path() -> Option<PathBuf> {
     return match env::consts::OS {
-        "linux" => "/tmp/simple-kl/apps.json".to_string(),
-        _ => "".to_string(),
+        "linux" => Some(Path::new("/tmp/simple-kl/apps.yml").to_owned()),
+        _ => None,
     };
 }
 
-pub fn get_extensions_index_path() -> String {
+pub fn get_extensions_index_path() -> Option<PathBuf> {
     return match env::consts::OS {
-        "linux" => "/tmp/simple-kl/extensions.json".to_string(),
-        _ => "".to_string(),
+        "linux" => Some(Path::new("/tmp/simple-kl/extensions.yml").to_owned()),
+        _ => None,
     };
 }
 
-pub fn get_temp_folder_path() -> String {
+pub fn get_temp_directory() -> Option<PathBuf> {
     return match env::consts::OS {
-        "linux" => "/tmp/simple-kl/".to_string(),
-        _ => "".to_string(),
+        "linux" => Some(Path::new("/tmp/simple-kl/").to_owned()),
+        _ => None,
     };
 }
 
-pub fn get_extensions_path() -> String {
+pub fn get_extensions_path() -> Option<PathBuf> {
     return match env::consts::OS {
         "linux" => {
-            let home_path = get_home_path();
+            let mut home_path = get_home_path()?;
+            home_path.push(".local/share/simple-kl/extensions");
 
-            format!("{home_path}/.local/share/simple-kl/extensions")
+            Some(home_path)
         }
-        _ => "".to_string(),
+        _ => None,
     };
 }
 
@@ -59,8 +62,11 @@ pub fn get_extensions_path() -> String {
 /// Linux: `$HOME/.local/share/simple-kl/resources`
 ///
 /// Windows: `C:\Program Files x64\simple-kl\resources`
-pub fn get_resources_path() -> String {
-    return format!("{}/.local/share/simple-kl/resources", get_home_path());
+pub fn get_resources_directory() -> Option<PathBuf> {
+    let mut path = get_home_path()?;
+    path.push(".local/share/simple-kl/resources");
+
+    return Some(path);
 }
 
 /// Gets the communit themes folder path.
@@ -68,11 +74,11 @@ pub fn get_resources_path() -> String {
 /// Linux: `$HOME/.local/share/simple-kl/resources/themes`
 ///
 /// Windows: `C:\Program Files x64\simple-kl\resources\themes`
-pub fn get_community_themes_path() -> String {
-    return format!(
-        "{}/.local/share/simple-kl/resources/themes",
-        get_home_path()
-    );
+pub fn get_community_themes_path() -> Option<PathBuf> {
+    let mut path = get_resources_directory()?;
+    path.push("themes");
+
+    return Some(path);
 }
 
 /// Gets the communit themes file path.
@@ -80,29 +86,32 @@ pub fn get_community_themes_path() -> String {
 /// Linux: `$HOME/.local/share/simple-kl/resources/themes`
 ///
 /// Windows: `C:\Program Files x64\simple-kl\resources\themes`
-pub fn get_community_themes_file_path() -> String {
-    return format!(
-        "{}/.local/share/simple-kl/resources/themes/themes.json",
-        get_home_path()
-    );
+pub fn get_community_themes_file_path() -> Option<PathBuf> {
+    let mut path = get_community_themes_path()?;
+    path.push("themes.json");
+
+    return Some(path);
 }
 
-pub fn get_temp_themes_path() -> String {
-    return format!("{}/themes", get_temp_folder_path());
+pub fn get_temp_themes_path() -> Option<PathBuf> {
+    let mut path = get_temp_directory()?;
+    path.push("themes");
+
+    return Some(path);
 }
 
-pub fn get_community_extensions_path() -> String {
-    return format!(
-        "{}/.local/share/simple-kl/resources/extensions",
-        get_home_path()
-    );
+pub fn get_community_extensions_directory() -> Option<PathBuf> {
+    let mut path = get_resources_directory()?;
+    path.push("extensions");
+
+    return Some(path);
 }
 
-pub fn get_community_extensions_file_path() -> String {
-    return format!(
-        "{}/.local/share/simple-kl/resources/extensions/extensions.json",
-        get_home_path()
-    );
+pub fn get_community_extensions_file_path() -> Option<PathBuf> {
+    let mut path = get_community_extensions_directory()?;
+    path.push("extensions.json");
+
+    return Some(path);
 }
 
 ///Gets a icon to use on the result
@@ -113,12 +122,12 @@ pub fn get_community_extensions_file_path() -> String {
 ///```no_run
 ///get_extension_icon(extension_id, "@src/images/icon.svg".to_string())
 ///```
-pub fn get_extension_icon(extension_id: String, location: String) -> String {
-    if let Ok(folders) = fs::read_dir(&get_extensions_path()) {
+pub fn get_extension_icon(extension_id: &str, location: &str) -> Option<PathBuf> {
+    if let Ok(folders) = fs::read_dir(&get_extensions_path().unwrap()) {
         for folder in folders {
             if let Ok(folder) = folder {
-                let folder_path = folder.path().into_os_string().into_string().unwrap();
-                let manifest_file_path = &format!("{}/manifest.json", folder_path);
+                let mut manifest_file_path = folder.path();
+                manifest_file_path.push("manifest.json");
 
                 if let Ok(mut manifest_file) = File::open(manifest_file_path) {
                     let mut manifest_json = String::from("");
@@ -128,60 +137,97 @@ pub fn get_extension_icon(extension_id: String, location: String) -> String {
                     let manifest: ExtensionManifest = serde_json::from_str(&manifest_json).unwrap();
 
                     if manifest.id == extension_id {
-                        return match location.starts_with("@") {
-                            true => format!(
-                                "{}",
-                                location.replace(
-                                    "@",
-                                    (get_extension_path(manifest.id.clone()).unwrap() + "/")
-                                        .as_str()
-                                )
-                            ),
-                            false => location.to_string(),
-                        };
+
+                        if location.starts_with("@"){
+                            let mut path = get_extension_path(manifest.id.to_owned()).unwrap();
+                            path.push(location.replace("@", ""));
+
+                            return Some(path);
+                        }
+
+                        return Some(Path::new(location).to_owned());
                     }
                 }
             }
         }
     }
 
-    return "".to_string();
+    return None;
 }
+
+///Gets the extension folder
+///
+///**Linux**: `{HOME}/.local/share/simple-kl/extensions/{extension_folder}` 
+///
+///**Example**
+///
+///```let directory = get_extension_directory("com-lighttigerxiv-bookmarks")```
+pub fn get_extension_directory(extension_id: &str)-> Option<PathBuf>{
+    if let Ok(folders) = fs::read_dir(&get_extensions_path().unwrap()) {
+        for folder in folders {
+            if let Ok(folder) = folder {
+                let mut manifest_file_path = folder.path();
+                manifest_file_path.push("manifest.json");
+
+                if let Ok(mut manifest_file) = File::open(manifest_file_path) {
+                    let mut manifest_json = String::from("");
+                    manifest_file.read_to_string(&mut manifest_json).unwrap();
+                    manifest_file.flush().unwrap();
+
+                    let manifest: ExtensionManifest = serde_json::from_str(&manifest_json).unwrap();
+
+                    if manifest.id == extension_id {
+                        return Some(folder.path())
+                    }
+                }
+            }
+        }
+    }
+
+    return None
+}
+
+
 
 pub fn get_extension_parameters_path() -> String {
     return match env::consts::OS {
-        "linux" => String::from("/tmp/simple-kl/extension-parameters.json"),
+        "linux" => String::from("/tmp/simple-kl/extension-parameters.yml"),
         _ => String::from(""),
     };
 }
 
 pub fn get_extension_results_path() -> String {
     return match env::consts::OS {
-        "linux" => String::from("/tmp/simple-kl/extension-results.json"),
+        "linux" => String::from("/tmp/simple-kl/extension-results.yml"),
         _ => String::from(""),
     };
 }
 
-pub fn get_extension_path(id: String) -> Result<String, String> {
-    if let Ok(folders) = fs::read_dir(&get_extensions_path()) {
+pub fn get_extension_path(id: String) -> Option<PathBuf> {
+    if let Ok(folders) = fs::read_dir(&get_extensions_path().unwrap()) {
         for folder in folders {
             if let Ok(folder) = folder {
-                let folder_path = folder.path().into_os_string().into_string().unwrap();
-                let manifest_file_path = &format!("{}/manifest.json", folder_path);
+                let mut manifest_file_path = folder.path();
+                manifest_file_path.push("manifest.json");
 
                 if let Ok(mut manifest_file) = File::open(manifest_file_path) {
                     let mut manifest_json = String::from("");
-                    manifest_file.read_to_string(&mut manifest_json).unwrap();
-                    let _ = manifest_file.flush();
+
+                    manifest_file
+                        .read_to_string(&mut manifest_json)
+                        .expect("Error reading manifest file");
+
+                    manifest_file.flush().expect("Error closing manifest file");
+
                     let manifest: ExtensionManifest = serde_json::from_str(&manifest_json).unwrap();
 
                     if manifest.id == id {
-                        return Ok(folder_path.to_string());
+                        return Some(folder.path());
                     }
                 }
             }
         }
     }
 
-    return Err("Error getting extension folder".into());
+    return None;
 }

@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::actions::ResultAction;
 use serde::Deserialize;
 use serde::Serialize;
@@ -56,11 +58,11 @@ impl IconWithTextResult {
         };
     }
 
-    pub fn new_with_color(icon: String, color: String, text: String, action: ResultAction) -> Self {
+    pub fn new_with_color(icon: PathBuf, color: &str, text: &str, action: ResultAction) -> Self {
         return IconWithTextResult {
-            icon,
-            icon_color: Some(color),
-            text,
+            icon: icon.into_os_string().into_string().unwrap(),
+            icon_color: Some(color.to_owned()),
+            text: text.to_owned(),
             action,
         };
     }

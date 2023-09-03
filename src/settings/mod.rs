@@ -6,7 +6,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::paths::{get_resources_path, get_settings_path};
+use crate::paths::{get_resources_directory, get_settings_path};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Settings {
@@ -84,6 +84,15 @@ pub struct ExtensionOptionSetting {
 
 impl Settings {
     pub fn default_settings() -> Settings {
+        let mut google_svg_path = get_resources_directory().unwrap();
+        google_svg_path.push("images/google.svg");
+
+        let mut brave_svg_path = get_resources_directory().unwrap();
+        brave_svg_path.push("images/brave.svg");
+
+        let mut duckduckgo_svg_path = get_resources_directory().unwrap();
+        duckduckgo_svg_path.push("images/duckduckgo.svg");
+
         return Settings {
             general: GeneralSettings {
                 first_key: "ctrl".to_string(),
@@ -110,7 +119,7 @@ impl Settings {
             },
             search_engines: vec![
                 SearchEngine {
-                    icon: Some(format!("{}/images/google.svg", get_resources_path())),
+                    icon: Some(google_svg_path.into_os_string().into_string().unwrap()),
                     tint_icon: true,
                     name: "Google".to_string(),
                     keyword: "gg".to_string(),
@@ -118,7 +127,7 @@ impl Settings {
                     default: true,
                 },
                 SearchEngine {
-                    icon: Some(format!("{}/images/duckduckgo.svg", get_resources_path())),
+                    icon: Some(duckduckgo_svg_path.into_os_string().into_string().unwrap()),
                     tint_icon: true,
                     name: "DuckDuckGo".to_string(),
                     keyword: "dd".to_string(),
@@ -126,7 +135,7 @@ impl Settings {
                     default: false,
                 },
                 SearchEngine {
-                    icon: Some(format!("{}/images/brave.svg", get_resources_path())),
+                    icon: Some(brave_svg_path.into_os_string().into_string().unwrap()),
                     tint_icon: true,
                     name: "Brave Search".to_string(),
                     keyword: "bs".to_string(),
@@ -139,42 +148,46 @@ impl Settings {
     }
 
     pub fn init() {
-        let settings_path = get_settings_path();
-        let default_settings = Settings::default_settings();
+        let settings_path = get_settings_path().unwrap();
 
-        if !Path::new(&settings_path).exists() {
+        if !settings_path.exists() {
             fs::create_dir_all(Path::new(&settings_path).parent().unwrap())
                 .expect("Failed to create configs folder");
 
-            let mut settings_file =
-                File::create(&settings_path).expect("Failed to create settings file");
-            let settings_json =
-                serde_json::to_string(&default_settings).expect("Error converting settings json");
+            let mut settings_file = File::create(&settings_path)
+                .expect("Failed to create settings file");
 
-            settings_file
-                .write_all(&settings_json.as_bytes())
-                .expect("Error saving default settings");
+            let settings_yaml = serde_yaml::to_string(&Settings::default_settings())
+                .expect("Error converting settings yaml");
 
-            settings_file.flush().unwrap();
+            settings_file.write_all(&settings_yaml.as_bytes())
+                .expect("Error saving settings");
+
+            settings_file.flush()
+                .expect("Error closing settings file");
         }
     }
 
-    pub fn current_settings() -> Settings {
-        let settings_path = get_settings_path();
-        let mut settings_file = File::open(&settings_path).expect("Failed to open settings");
+    pub fn current_settings() -> Option<Settings> {
+        let settings_path = get_settings_path().unwrap();
+
+        let mut settings_file = File::open(&settings_path)
+            .expect("Failed to open settings");
+
         let mut settings_content = String::new();
 
         settings_file
             .read_to_string(&mut settings_content)
             .expect("Failed to read settings");
 
-        let current_settings =
-            serde_json::from_str(&settings_content).expect("Error getting current settings");
-        return current_settings;
+        let current_settings = serde_yaml::from_str(&settings_content)
+            .expect("Error getting current settings");
+
+        return Some(current_settings);
     }
 
     pub fn update(new_settings: String) -> Result<(), String> {
-        let settings_path = get_settings_path();
+        let settings_path = get_settings_path().unwrap();
         let mut settings_file = File::create(&settings_path).expect("Failed to open settings");
 
         settings_file.write_all(&new_settings.as_bytes()).expect("");
@@ -186,7 +199,7 @@ impl Settings {
     }
 
     pub fn launch_shortcut() -> String {
-        let settings = Settings::current_settings();
+        let settings = Settings::current_settings().unwrap();
         let first_key = settings.general.first_key;
         let second_key = settings.general.second_key;
         let third_key = settings.general.third_key;
@@ -202,10 +215,10 @@ impl Settings {
     }
 
     pub fn get_extension_setting(
-        extension_id: String,
-        setting_id: String,
+        extension_id: &str,
+        setting_id: &str,
     ) -> Result<String, String> {
-        let settings = Settings::current_settings();
+        let settings = Settings::current_settings().unwrap();
         let extensions_settings = settings.extensions;
 
         for extension_setting in extensions_settings {
@@ -236,10 +249,10 @@ impl Settings {
         setting_id: String,
         new_value: String,
     ) -> Result<(), String> {
-        let mut new_settings = Settings::current_settings();
+        let mut new_settings = Settings::current_settings().unwrap();
 
         for (extension_setting_index, extension_setting) in
-            Settings::current_settings().extensions.iter().enumerate()
+        Settings::current_settings().unwrap().extensions.iter().enumerate()
         {
             if extension_setting.id == extension_id {
                 for (any_index, any_setting) in extension_setting.settings.any.iter().enumerate() {
@@ -252,7 +265,7 @@ impl Settings {
                 }
 
                 for (linux_index, linux_setting) in
-                    extension_setting.settings.linux.iter().enumerate()
+                extension_setting.settings.linux.iter().enumerate()
                 {
                     if linux_setting.id == setting_id {
                         new_settings.extensions[extension_setting_index]
@@ -263,7 +276,7 @@ impl Settings {
                 }
 
                 for (windows_index, windows_setting) in
-                    extension_setting.settings.windows.iter().enumerate()
+                extension_setting.settings.windows.iter().enumerate()
                 {
                     if windows_setting.id == setting_id {
                         new_settings.extensions[extension_setting_index]
@@ -275,20 +288,20 @@ impl Settings {
             }
         }
 
-        return Settings::update(serde_json::to_string(&new_settings).unwrap());
+        return Settings::update(serde_yaml::to_string(&new_settings).unwrap());
     }
 
     pub fn update_extension_keyword(extension_id: String, keyword: String) -> Result<(), String> {
-        let mut new_settings = Settings::current_settings();
+        let mut new_settings = Settings::current_settings()
+            .expect("Error getting settings");
 
-        for (extension_setting_index, extension_setting) in
-            Settings::current_settings().extensions.iter().enumerate()
+        for (extension_setting_index, extension_setting) in Settings::current_settings().expect("Error getting settings").extensions.iter().enumerate()
         {
             if extension_setting.id == extension_id {
                 new_settings.extensions[extension_setting_index].keyword = keyword.clone();
             }
         }
 
-        return Settings::update(serde_json::to_string(&new_settings).unwrap());
+        return Settings::update(serde_yaml::to_string(&new_settings).unwrap());
     }
 }

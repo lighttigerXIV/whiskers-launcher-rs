@@ -41,17 +41,18 @@ impl OpenApp {
 }
 
 impl ExtensionAction {
-    pub fn new(extension_id: String, action: String) -> Self {
+    pub fn new(extension_id: &str, action: &str) -> Self {
         return ExtensionAction {
-            extension_id,
-            action,
+            extension_id: extension_id.to_owned(),
+            action: action.to_owned(),
             args: None,
         };
     }
 
-    pub fn new_with_args(extension_id: String, action: String, args: Vec<String>) -> Self {
+    pub fn new_with_args(extension_id: &str, action: String, args: Vec<String>) -> Self {
+
         return ExtensionAction {
-            extension_id,
+            extension_id: extension_id.to_owned(),
             action,
             args: Some(args),
         };
