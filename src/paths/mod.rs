@@ -114,14 +114,21 @@ pub fn get_community_extensions_file_path() -> Option<PathBuf> {
     return Some(path);
 }
 
+pub fn get_dialog_action_path() -> Option<PathBuf>{
+    let mut path = get_temp_directory().unwrap();
+    path.push("dialog-action.yml");
+
+    return Some(path);
+}
+
 ///Gets a icon to use on the result
 ///
 ///**Note:** Use `@` to make the location relative to the extension folder. If not it will use the location as an absolute path.
 ///
 ///Usage Example:
-///```no_run
-///get_extension_icon(extension_id, "@src/images/icon.svg".to_string())
 ///```
+///get_extension_icon(extension_id, "@src/images/icon.svg".to_string())
+///
 pub fn get_extension_icon(extension_id: &str, location: &str) -> Option<PathBuf> {
     if let Ok(folders) = fs::read_dir(&get_extensions_path().unwrap()) {
         for folder in folders {
@@ -189,17 +196,17 @@ pub fn get_extension_directory(extension_id: &str)-> Option<PathBuf>{
 
 
 
-pub fn get_extension_parameters_path() -> String {
+pub fn get_extension_parameters_path() -> Option<PathBuf> {
     return match env::consts::OS {
-        "linux" => String::from("/tmp/simple-kl/extension-parameters.yml"),
-        _ => String::from(""),
+        "linux" => Some(Path::new("/tmp/simple-kl/extension-parameters.yml").to_owned()),
+        _ => Some(Path::new("/").to_owned()),
     };
 }
 
-pub fn get_extension_results_path() -> String {
+pub fn get_extension_results_path() -> Option<PathBuf> {
     return match env::consts::OS {
-        "linux" => String::from("/tmp/simple-kl/extension-results.yml"),
-        _ => String::from(""),
+        "linux" => Some(Path::new("/tmp/simple-kl/extension-results.yml").to_owned()),
+        _ => Some(Path::new("").to_owned()),
     };
 }
 

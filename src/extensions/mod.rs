@@ -12,6 +12,8 @@ use std::{
     io::{Read, Write},
     path::Path,
 };
+use std::process::exit;
+use crate::paths::get_temp_directory;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Parameters {
@@ -30,7 +32,7 @@ pub enum Function {
 /// Returns
 pub fn get_parameters() -> Option<Parameters> {
     let mut parameters_file =
-        File::open(get_extension_parameters_path()).expect("Error opening parameters file");
+        File::open(get_extension_parameters_path().unwrap()).expect("Error opening parameters file");
     let mut parameters_json = String::from("");
 
     parameters_file
@@ -47,15 +49,17 @@ pub fn get_parameters() -> Option<Parameters> {
 
 pub fn emit_results(results: Vec<SimpleKLResult>) {
     let mut results_path_file =
-        File::create(get_extension_results_path()).expect("Error opening extension results");
-    let results_json = serde_yaml::to_string(&results).expect("Error converting results to json");
+        File::create(get_extension_results_path().unwrap()).expect("Error opening extension results");
+    let results_yaml = serde_yaml::to_string(&results).expect("Error converting results to yaml");
 
     results_path_file
-        .write_all(&results_json.as_bytes())
+        .write_all(&results_yaml.as_bytes())
         .expect("Error writing extension results");
     results_path_file
         .flush()
         .expect("Error closing extension results file");
+
+    exit(0);
 }
 
 impl Parameters {
@@ -82,6 +86,7 @@ impl Parameters {
 pub struct ExtensionManifest {
     pub id: String,
     pub name: String,
+    pub version: String,
     pub description: String,
     pub os: Vec<String>,
     pub keyword: String,
@@ -147,12 +152,18 @@ pub fn init_extensions() {
         }
     }
 
+    if !get_temp_directory().unwrap().exists(){
+        fs::create_dir_all(get_temp_directory().unwrap())
+            .expect("Error creating temp folder");
+    }
+
     let mut extension_file = File::create(get_extensions_index_path().unwrap()).unwrap();
+    
     extension_file
         .write_all(serde_yaml::to_string(&extensions).unwrap().as_bytes())
         .unwrap();
 
-    let settings_extensions = Settings::current_settings().unwrap().extensions;
+    let settings_extensions = Settings::get_settings().extensions;
 
     let mut new_settings_extensions: Vec<ExtensionsSettings> = Vec::new();
 
@@ -222,7 +233,7 @@ pub fn init_extensions() {
         }
     }
 
-    let mut new_settings = Settings::current_settings().unwrap();
+    let mut new_settings = Settings::get_settings();
     new_settings.extensions = new_settings_extensions;
 
     Settings::update(serde_yaml::to_string(&new_settings).expect("Error converting settings"))
