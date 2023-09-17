@@ -1,13 +1,16 @@
 use std::{
-    fs::{self, File},
-    io::{Write},
+    fs::{self},
     path::Path,
 };
 
 use serde::{Deserialize, Serialize};
 
 use crate::paths::{get_resources_directory, get_settings_path};
-use crate::settings::Setting::{Extensions, SearchBoxBorderWidth, SearchEngines, ThemeAccent, ThemeBackground, ThemeDanger, ThemeOnAccent, ThemeOnDanger, ThemeSecondaryBackground, ThemeSecondaryText, ThemeTertiaryBackground, ThemeText};
+use crate::settings::Setting::{
+    Extensions, SearchBoxBorderWidth, SearchEngines, ThemeAccent, ThemeBackground, ThemeDanger,
+    ThemeOnAccent, ThemeOnDanger, ThemeSecondaryBackground, ThemeSecondaryText,
+    ThemeTertiaryBackground, ThemeText,
+};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Settings {
@@ -114,28 +117,21 @@ impl Settings {
             fs::create_dir_all(Path::new(&settings_path).parent().unwrap())
                 .expect("Failed to create configs folder");
 
-            let mut settings_file = File::create(&settings_path)
-                .expect("Failed to create settings file");
-
             let settings_yaml = serde_yaml::to_string(&Settings::get_settings())
                 .expect("Error converting settings yaml");
 
-            settings_file.write_all(&settings_yaml.as_bytes())
-                .expect("Error saving settings");
-
-            settings_file.flush()
-                .expect("Error closing settings file");
+            fs::write(&settings_path, &settings_yaml).expect("Error writing settings");
         }
     }
     pub fn get_setting(setting: Setting) -> String {
         let settings_yaml = match fs::read_to_string(get_settings_path().unwrap()) {
             Ok(settings_yaml) => settings_yaml,
-            Err(_) => return Settings::get_default_setting(setting)
+            Err(_) => return Settings::get_default_setting(setting),
         };
 
         let settings: Settings = match serde_yaml::from_str(&settings_yaml) {
             Ok(settings) => settings,
-            Err(_) => return Settings::get_default_setting(setting)
+            Err(_) => return Settings::get_default_setting(setting),
         };
 
         return match setting {
@@ -144,7 +140,9 @@ impl Settings {
             Setting::GeneralThirdKey => settings.general.third_key,
             Setting::GeneralLimit => settings.general.limit.to_string(),
             Setting::SearchBoxShowSearchIcon => settings.search_box.show_search_icon.to_string(),
-            Setting::SearchBoxShowSettingsIcon => settings.search_box.show_settings_icon.to_string(),
+            Setting::SearchBoxShowSettingsIcon => {
+                settings.search_box.show_settings_icon.to_string()
+            }
             Setting::SearchBoxRoundness => settings.search_box.roundness.to_string(),
             Setting::SearchBoxBorderWidth => settings.search_box.border_width.to_string(),
             Setting::ThemeBackground => settings.theme.background,
@@ -157,7 +155,7 @@ impl Settings {
             Setting::ThemeText => settings.theme.text,
             Setting::ThemeSecondaryText => settings.theme.secondary_text,
             Setting::SearchEngines => serde_yaml::to_string(&settings.search_engines).unwrap(),
-            Setting::Extensions => serde_yaml::to_string(&settings.extensions).unwrap()
+            Setting::Extensions => serde_yaml::to_string(&settings.extensions).unwrap(),
         };
     }
 
@@ -219,25 +217,33 @@ impl Settings {
 
                 serde_yaml::to_string(&search_engines).unwrap()
             }
-            Setting::Extensions => "[]".to_owned()
+            Setting::Extensions => "[]".to_owned(),
         };
     }
 
-    pub fn get_settings() -> Settings{
-        return Settings{
-            general: GeneralSettings{
+    pub fn get_settings() -> Settings {
+        return Settings {
+            general: GeneralSettings {
                 first_key: Settings::get_setting(Setting::GeneralFirstKey),
                 second_key: Settings::get_setting(Setting::GeneralSecondKey),
                 third_key: Settings::get_setting(Setting::GeneralThirdKey),
-                limit: Settings::get_setting(Setting::GeneralLimit).parse().unwrap(),
+                limit: Settings::get_setting(Setting::GeneralLimit)
+                    .parse()
+                    .unwrap(),
             },
-            search_box: SearchBoxSettings{
-                show_search_icon: Settings::get_setting(Setting::SearchBoxShowSearchIcon).parse().unwrap(),
-                show_settings_icon: Settings::get_setting(Setting::SearchBoxShowSettingsIcon).parse().unwrap(),
-                roundness: Settings::get_setting(Setting::SearchBoxRoundness).parse().unwrap(),
-                border_width: Settings::get_setting(SearchBoxBorderWidth).parse().unwrap()
+            search_box: SearchBoxSettings {
+                show_search_icon: Settings::get_setting(Setting::SearchBoxShowSearchIcon)
+                    .parse()
+                    .unwrap(),
+                show_settings_icon: Settings::get_setting(Setting::SearchBoxShowSettingsIcon)
+                    .parse()
+                    .unwrap(),
+                roundness: Settings::get_setting(Setting::SearchBoxRoundness)
+                    .parse()
+                    .unwrap(),
+                border_width: Settings::get_setting(SearchBoxBorderWidth).parse().unwrap(),
             },
-            theme: Theme{
+            theme: Theme {
                 background: Settings::get_setting(ThemeBackground),
                 secondary_background: Settings::get_setting(ThemeSecondaryBackground),
                 tertiary_background: Settings::get_setting(ThemeTertiaryBackground),
@@ -246,23 +252,19 @@ impl Settings {
                 danger: Settings::get_setting(ThemeDanger),
                 on_danger: Settings::get_setting(ThemeOnDanger),
                 text: Settings::get_setting(ThemeText),
-                secondary_text: Settings::get_setting(ThemeSecondaryText)
+                secondary_text: Settings::get_setting(ThemeSecondaryText),
             },
             search_engines: serde_yaml::from_str(&Settings::get_setting(SearchEngines)).unwrap(),
-            extensions: serde_yaml::from_str(&Settings::get_setting(Extensions)).unwrap()
-        }
+            extensions: serde_yaml::from_str(&Settings::get_setting(Extensions)).unwrap(),
+        };
     }
 
-    pub fn update(new_settings: String) -> Result<(), String> {
+    pub fn update(settings: &Settings) {
         let settings_path = get_settings_path().unwrap();
-        let mut settings_file = File::create(&settings_path).expect("Failed to open settings");
+        let settings_yaml =
+            &serde_yaml::to_string(&settings).expect("Error converting settings to yaml");
 
-        settings_file.write_all(&new_settings.as_bytes()).expect("");
-
-        return match settings_file.flush() {
-            Ok(()) => Ok(()),
-            Err(error) => Err(error.to_string()),
-        };
+        fs::write(&settings_path, settings_yaml).unwrap();
     }
 
     pub fn launch_shortcut() -> String {
@@ -281,10 +283,7 @@ impl Settings {
         };
     }
 
-    pub fn get_extension_setting(
-        extension_id: &str,
-        setting_id: &str,
-    ) -> Result<String, String> {
+    pub fn get_extension_setting(extension_id: &str, setting_id: &str) -> Result<String, String> {
         let settings = Settings::get_settings();
         let extensions_settings = settings.extensions;
 
@@ -311,15 +310,11 @@ impl Settings {
         return Err("Error getting extension settings".into());
     }
 
-    pub fn update_extension_setting(
-        extension_id: String,
-        setting_id: String,
-        new_value: String,
-    ) -> Result<(), String> {
+    pub fn update_extension_setting(extension_id: String, setting_id: String, new_value: String) {
         let mut new_settings = Settings::get_settings();
 
         for (extension_setting_index, extension_setting) in
-        Settings::get_settings().extensions.iter().enumerate()
+            Settings::get_settings().extensions.iter().enumerate()
         {
             if extension_setting.id == extension_id {
                 for (any_index, any_setting) in extension_setting.settings.any.iter().enumerate() {
@@ -332,7 +327,7 @@ impl Settings {
                 }
 
                 for (linux_index, linux_setting) in
-                extension_setting.settings.linux.iter().enumerate()
+                    extension_setting.settings.linux.iter().enumerate()
                 {
                     if linux_setting.id == setting_id {
                         new_settings.extensions[extension_setting_index]
@@ -343,7 +338,7 @@ impl Settings {
                 }
 
                 for (windows_index, windows_setting) in
-                extension_setting.settings.windows.iter().enumerate()
+                    extension_setting.settings.windows.iter().enumerate()
                 {
                     if windows_setting.id == setting_id {
                         new_settings.extensions[extension_setting_index]
@@ -355,19 +350,20 @@ impl Settings {
             }
         }
 
-        return Settings::update(serde_yaml::to_string(&new_settings).unwrap());
+        Settings::update(&new_settings);
     }
 
-    pub fn update_extension_keyword(extension_id: String, keyword: String) -> Result<(), String> {
+    pub fn update_extension_keyword(extension_id: String, keyword: String) {
         let mut new_settings = Settings::get_settings();
 
-        for (extension_setting_index, extension_setting) in Settings::get_settings().extensions.iter().enumerate()
+        for (extension_setting_index, extension_setting) in
+            Settings::get_settings().extensions.iter().enumerate()
         {
             if extension_setting.id == extension_id {
                 new_settings.extensions[extension_setting_index].keyword = keyword.clone();
             }
         }
 
-        return Settings::update(serde_yaml::to_string(&new_settings).unwrap());
+        Settings::update(&new_settings);
     }
 }

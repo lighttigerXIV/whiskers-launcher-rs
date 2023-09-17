@@ -44,8 +44,8 @@ pub struct IconWithTitleAndDescriptionResult {
 }
 
 impl TextResult {
-    pub fn new(text: String, action: ResultAction) -> Self {
-        return TextResult { text, action };
+    pub fn new(text: &str, action: ResultAction) -> Self {
+        return TextResult { text: text.to_owned(), action };
     }
 }
 

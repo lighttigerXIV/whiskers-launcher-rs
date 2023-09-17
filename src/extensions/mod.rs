@@ -47,7 +47,7 @@ pub fn get_parameters() -> Option<Parameters> {
     return Some(parameters);
 }
 
-pub fn emit_results(results: Vec<SimpleKLResult>) {
+pub fn emit_results(results: &Vec<SimpleKLResult>) {
     let mut results_path_file =
         File::create(get_extension_results_path().unwrap()).expect("Error opening extension results");
     let results_yaml = serde_yaml::to_string(&results).expect("Error converting results to yaml");
@@ -55,6 +55,7 @@ pub fn emit_results(results: Vec<SimpleKLResult>) {
     results_path_file
         .write_all(&results_yaml.as_bytes())
         .expect("Error writing extension results");
+    
     results_path_file
         .flush()
         .expect("Error closing extension results file");
@@ -236,8 +237,7 @@ pub fn init_extensions() {
     let mut new_settings = Settings::get_settings();
     new_settings.extensions = new_settings_extensions;
 
-    Settings::update(serde_yaml::to_string(&new_settings).expect("Error converting settings"))
-        .expect("Error pdating settings");
+    Settings::update(&new_settings);
 }
 
 pub fn get_extensions() -> Vec<ExtensionManifest> {
