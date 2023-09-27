@@ -165,7 +165,7 @@ fn default_general_second_key() -> String { return "-".to_owned(); }
 
 fn default_general_third_key() -> String { return "space".to_owned(); }
 
-fn default_general_auto_start() -> bool { return false; }
+fn default_general_auto_start() -> bool { return true; }
 
 fn default_search_settings() -> SearchSettings {
     return SearchSettings {
@@ -197,7 +197,7 @@ fn default_results_settings() -> ResultsSettings {
 
 fn default_results_count() -> usize { return 6; }
 
-fn default_results_split_ui() -> bool { return true; }
+fn default_results_split_ui() -> bool { return false; }
 
 fn default_results_layout() -> LayoutSetting { return LayoutSetting::Medium; }
 

@@ -90,21 +90,10 @@ pub fn get_temp_directory() -> Option<PathBuf> {
 
 /// Get the extensions folder path
 pub fn get_extensions_path() -> Option<PathBuf> {
-    return match env::consts::OS {
-        "linux" => {
-            let mut path = get_local_dir().unwrap();
-            path.push("extensions");
+    let mut path = get_local_dir().unwrap();
+    path.push("extensions");
 
-            Some(path)
-        }
-        "windows" => {
-            let mut path = get_local_dir().unwrap();
-            path.push("extensions");
-
-            Some(path)
-        }
-        _ => None,
-    };
+    return Some(path)
 }
 
 /// Gets the resources folder path.

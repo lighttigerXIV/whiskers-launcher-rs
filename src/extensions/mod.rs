@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::{fs::{File}, fs, io::{Read, Write}};
 use std::path::Path;
 use std::process::exit;
-use crate::paths::{get_extensions_index_path, get_extensions_path, get_settings_path, get_temp_directory};
+use crate::paths::{get_extensions_index_path, get_extensions_path, get_temp_directory};
 use crate::settings::{ExtensionOptionSetting, ExtensionsSettings, get_settings, update_settings};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -124,7 +124,7 @@ fn default_extension_setting() -> Vec<ExtensionSetting> { return vec![]; }
 
 
 pub fn init_extensions() {
-    let extension_path = &get_settings_path().unwrap();
+    let extension_path = &get_extensions_path().unwrap();
     let mut extensions: Vec<ExtensionManifest> = Vec::new();
 
     if !Path::new(extension_path).exists() {
