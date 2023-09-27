@@ -1,82 +1,117 @@
-use std::{
-    fs::{self},
-    path::Path,
-};
-
+use std::fs;
+use std::fs::File;
 use serde::{Deserialize, Serialize};
+use crate::paths::get_settings_path;
 
-use crate::paths::{get_resources_directory, get_settings_path};
-use crate::settings::Setting::{
-    Extensions, SearchBoxBorderWidth, SearchEngines, ThemeAccent, ThemeBackground, ThemeDanger,
-    ThemeOnAccent, ThemeOnDanger, ThemeSecondaryBackground, ThemeSecondaryText,
-    ThemeTertiaryBackground, ThemeText,
-};
-
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Settings {
+    #[serde(default = "default_general_settings")]
     pub general: GeneralSettings,
-    pub search_box: SearchBoxSettings,
-    pub theme: Theme,
-    pub search_engines: Vec<SearchEngine>,
+    #[serde(default = "default_search_settings")]
+    pub search: SearchSettings,
+    #[serde(default = "default_results_settings")]
+    pub results: ResultsSettings,
+    #[serde(default = "default_theme_settings")]
+    pub theme: ThemeSettings,
+    #[serde(default = "default_search_engines")]
+    pub search_engines: Vec<SearchEngineSettings>,
+    #[serde(default = "default_extensions")]
     pub extensions: Vec<ExtensionsSettings>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GeneralSettings {
+    #[serde(default = "default_general_first_key")]
     pub first_key: String,
+    #[serde(default = "default_general_second_key")]
     pub second_key: String,
+    #[serde(default = "default_general_third_key")]
     pub third_key: String,
-    pub limit: usize,
+    #[serde(default = "default_general_auto_start")]
+    pub auto_start: bool,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct SearchBoxSettings {
-    pub show_search_icon: bool,
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct SearchSettings {
+    #[serde(default = "default_search_show_settings_icon")]
     pub show_settings_icon: bool,
-    pub roundness: usize,
+    #[serde(default = "default_search_show_search_icon")]
+    pub show_search_icon: bool,
+    #[serde(default = "default_search_show_settings_icon")]
+    pub show_placeholder: bool,
+    #[serde(default = "default_search_border_radius")]
+    pub border_radius: usize,
+    #[serde(default = "default_search_border_width")]
     pub border_width: usize,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ThemeSettings {
-    pub current: Theme,
-    pub themes: Vec<Theme>,
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ResultsSettings {
+    #[serde(default = "default_results_count")]
+    pub results_count: usize,
+    #[serde(default = "default_results_split_ui")]
+    pub split_ui: bool,
+    #[serde(default = "default_results_layout")]
+    pub layout: LayoutSetting,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Theme {
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(tag = "type")]
+pub enum LayoutSetting {
+    Small,
+    Medium,
+    Large,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ThemeSettings {
+    #[serde(default = "default_theme_background")]
     pub background: String,
+    #[serde(default = "default_theme_secondary_background")]
     pub secondary_background: String,
+    #[serde(default = "default_theme_tertiary_background")]
     pub tertiary_background: String,
+    #[serde(default = "default_theme_accent")]
     pub accent: String,
+    #[serde(default = "default_theme_on_accent")]
     pub on_accent: String,
+    #[serde(default = "default_theme_danger")]
     pub danger: String,
+    #[serde(default = "default_theme_on_danger")]
     pub on_danger: String,
+    #[serde(default = "default_theme_text")]
     pub text: String,
+    #[serde(default = "default_theme_secondary_text")]
     pub secondary_text: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct SearchEngine {
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct SearchEngineSettings {
     pub keyword: String,
     pub icon: Option<String>,
+    #[serde(default = "default_search_engine_tint_icon")]
     pub tint_icon: bool,
     pub name: String,
     pub query: String,
+    #[serde(default = "default_search_engine_default")]
     pub default: bool,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ExtensionsSettings {
     pub id: String,
     pub keyword: String,
+    #[serde(default = "default_extension_setting")]
     pub settings: ExtensionSetting,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ExtensionSetting {
+    #[serde(default = "default_extension_option_setting")]
     pub any: Vec<ExtensionOptionSetting>,
+    #[serde(default = "default_extension_option_setting")]
     pub linux: Vec<ExtensionOptionSetting>,
+    #[serde(default = "default_extension_option_setting")]
     pub windows: Vec<ExtensionOptionSetting>,
 }
 
@@ -87,15 +122,20 @@ pub struct ExtensionOptionSetting {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(tag = "type")]
 pub enum Setting {
     GeneralFirstKey,
     GeneralSecondKey,
     GeneralThirdKey,
-    GeneralLimit,
-    SearchBoxShowSearchIcon,
-    SearchBoxShowSettingsIcon,
-    SearchBoxRoundness,
-    SearchBoxBorderWidth,
+    GeneralAutoStart,
+    SearchShowSettingsIcon,
+    SearchShowSearchIcon,
+    SearchShowPlaceholder,
+    SearchBorderRadius,
+    SearchBorderWidth,
+    ResultsCount,
+    ResultsSplitUI,
+    ResultsLayout,
     ThemeBackground,
     ThemeSecondaryBackground,
     ThemeTertiaryBackground,
@@ -109,261 +149,135 @@ pub enum Setting {
     Extensions,
 }
 
-impl Settings {
-    pub fn init() {
-        let settings_path = get_settings_path().unwrap();
+//Default Settings
+fn default_general_settings() -> GeneralSettings {
+    return GeneralSettings {
+        first_key: default_general_first_key(),
+        second_key: default_general_second_key(),
+        third_key: default_general_third_key(),
+        auto_start: default_general_auto_start(),
+    };
+}
 
-        if !settings_path.exists() {
-            fs::create_dir_all(Path::new(&settings_path).parent().unwrap())
-                .expect("Failed to create configs folder");
+fn default_general_first_key() -> String { return "ctrl".to_owned(); }
 
-            let settings_yaml = serde_yaml::to_string(&Settings::get_settings())
-                .expect("Error converting settings yaml");
+fn default_general_second_key() -> String { return "-".to_owned(); }
 
-            fs::write(&settings_path, &settings_yaml).expect("Error writing settings");
-        }
+fn default_general_third_key() -> String { return "space".to_owned(); }
+
+fn default_general_auto_start() -> bool { return false; }
+
+fn default_search_settings() -> SearchSettings {
+    return SearchSettings {
+        show_settings_icon: default_search_show_settings_icon(),
+        show_search_icon: default_search_show_search_icon(),
+        show_placeholder: default_search_show_placeholder(),
+        border_radius: default_search_border_radius(),
+        border_width: default_search_border_width(),
+    };
+}
+
+fn default_search_show_settings_icon() -> bool { return true; }
+
+fn default_search_show_search_icon() -> bool { return true; }
+
+fn default_search_show_placeholder() -> bool { return true; }
+
+fn default_search_border_radius() -> usize { return 14; }
+
+fn default_search_border_width() -> usize { return 4; }
+
+fn default_results_settings() -> ResultsSettings {
+    return ResultsSettings {
+        results_count: default_results_count(),
+        split_ui: default_results_split_ui(),
+        layout: default_results_layout(),
+    };
+}
+
+fn default_results_count() -> usize { return 6; }
+
+fn default_results_split_ui() -> bool { return true; }
+
+fn default_results_layout() -> LayoutSetting { return LayoutSetting::Medium; }
+
+fn default_theme_settings() -> ThemeSettings {
+    return ThemeSettings {
+        background: default_theme_background(),
+        secondary_background: default_theme_secondary_background(),
+        tertiary_background: default_theme_tertiary_background(),
+        accent: default_theme_accent(),
+        on_accent: default_theme_on_accent(),
+        danger: default_theme_danger(),
+        on_danger: default_theme_on_danger(),
+        text: default_theme_text(),
+        secondary_text: default_theme_secondary_text(),
+    };
+}
+
+fn default_theme_background() -> String { return "#24273a".to_owned(); }
+
+fn default_theme_secondary_background() -> String { return "#181926".to_owned(); }
+
+fn default_theme_tertiary_background() -> String { return "#1e2030".to_owned(); }
+
+fn default_theme_accent() -> String { return "#8aadf4".to_owned(); }
+
+fn default_theme_on_accent() -> String { return "#181926".to_owned(); }
+
+fn default_theme_danger() -> String { return "#ed8796".to_owned(); }
+
+fn default_theme_on_danger() -> String { return "#181926".to_owned(); }
+
+fn default_theme_text() -> String { return "#cad3f5".to_owned(); }
+
+fn default_theme_secondary_text() -> String { return "#b8c0e0".to_owned(); }
+
+fn default_search_engines() -> Vec<SearchEngineSettings> { return vec![]; }
+
+fn default_search_engine_tint_icon() -> bool { return false; }
+
+fn default_search_engine_default() -> bool { return false; }
+
+fn default_extensions() -> Vec<ExtensionsSettings> { return vec![]; }
+
+fn default_extension_setting() -> ExtensionSetting {
+    return ExtensionSetting {
+        any: vec![],
+        linux: vec![],
+        windows: vec![],
+    };
+}
+
+fn default_extension_option_setting() -> Vec<ExtensionOptionSetting> { return vec![]; }
+
+//Functions
+
+
+/// Returns the app settings
+pub fn get_settings() -> Settings {
+    let settings_yaml = fs::read_to_string(&get_settings_path().unwrap()).unwrap();
+
+    let settings: Settings = serde_yaml::from_str(&settings_yaml).unwrap();
+
+    return settings;
+}
+
+
+/// Creates a settings file if it doesn't exist
+pub fn init_settings() {
+    let path = get_settings_path().unwrap();
+
+    if !&path.exists() {
+        File::create(&path).expect("Error creating settings file");
+        let settings_yaml = serde_yaml::to_string(&get_settings()).unwrap();
+        fs::write(&path, &settings_yaml).expect("Error writing settings file");
     }
-    pub fn get_setting(setting: Setting) -> String {
-        let settings_yaml = match fs::read_to_string(get_settings_path().unwrap()) {
-            Ok(settings_yaml) => settings_yaml,
-            Err(_) => return Settings::get_default_setting(setting),
-        };
+}
 
-        let settings: Settings = match serde_yaml::from_str(&settings_yaml) {
-            Ok(settings) => settings,
-            Err(_) => return Settings::get_default_setting(setting),
-        };
 
-        return match setting {
-            Setting::GeneralFirstKey => settings.general.first_key,
-            Setting::GeneralSecondKey => settings.general.second_key,
-            Setting::GeneralThirdKey => settings.general.third_key,
-            Setting::GeneralLimit => settings.general.limit.to_string(),
-            Setting::SearchBoxShowSearchIcon => settings.search_box.show_search_icon.to_string(),
-            Setting::SearchBoxShowSettingsIcon => {
-                settings.search_box.show_settings_icon.to_string()
-            }
-            Setting::SearchBoxRoundness => settings.search_box.roundness.to_string(),
-            Setting::SearchBoxBorderWidth => settings.search_box.border_width.to_string(),
-            Setting::ThemeBackground => settings.theme.background,
-            Setting::ThemeSecondaryBackground => settings.theme.secondary_background,
-            Setting::ThemeTertiaryBackground => settings.theme.tertiary_background,
-            Setting::ThemeAccent => settings.theme.accent,
-            Setting::ThemeOnAccent => settings.theme.on_accent,
-            Setting::ThemeDanger => settings.theme.danger,
-            Setting::ThemeOnDanger => settings.theme.on_danger,
-            Setting::ThemeText => settings.theme.text,
-            Setting::ThemeSecondaryText => settings.theme.secondary_text,
-            Setting::SearchEngines => serde_yaml::to_string(&settings.search_engines).unwrap(),
-            Setting::Extensions => serde_yaml::to_string(&settings.extensions).unwrap(),
-        };
-    }
-
-    pub fn get_default_setting(setting: Setting) -> String {
-        return match setting {
-            Setting::GeneralFirstKey => "ctrl".to_owned(),
-            Setting::GeneralSecondKey => "".to_owned(),
-            Setting::GeneralThirdKey => "space".to_owned(),
-            Setting::GeneralLimit => "6".to_owned(),
-            Setting::SearchBoxShowSearchIcon => "true".to_owned(),
-            Setting::SearchBoxShowSettingsIcon => "true".to_owned(),
-            Setting::SearchBoxRoundness => "4".to_owned(),
-            Setting::SearchBoxBorderWidth => "2".to_owned(),
-            Setting::ThemeBackground => "#1e1e2e".to_owned(),
-            Setting::ThemeSecondaryBackground => "#11111b".to_owned(),
-            Setting::ThemeTertiaryBackground => "#181825".to_owned(),
-            Setting::ThemeAccent => "#89b4fa".to_owned(),
-            Setting::ThemeOnAccent => "#1e1e2e".to_owned(),
-            Setting::ThemeDanger => "#f38ba8".to_owned(),
-            Setting::ThemeOnDanger => "#1e1e2e".to_owned(),
-            Setting::ThemeText => "#cdd6f4".to_owned(),
-            Setting::ThemeSecondaryText => "#bac2de".to_owned(),
-            Setting::SearchEngines => {
-                let mut google_svg_path = get_resources_directory().unwrap();
-                google_svg_path.push("images/google.svg");
-
-                let mut brave_svg_path = get_resources_directory().unwrap();
-                brave_svg_path.push("images/brave.svg");
-
-                let mut duckduckgo_svg_path = get_resources_directory().unwrap();
-                duckduckgo_svg_path.push("images/duckduckgo.svg");
-
-                let search_engines = vec![
-                    SearchEngine {
-                        icon: Some(google_svg_path.into_os_string().into_string().unwrap()),
-                        tint_icon: true,
-                        name: "Google".to_string(),
-                        keyword: "gg".to_string(),
-                        query: "https://google.com/search?q=%s".to_string(),
-                        default: true,
-                    },
-                    SearchEngine {
-                        icon: Some(duckduckgo_svg_path.into_os_string().into_string().unwrap()),
-                        tint_icon: true,
-                        name: "DuckDuckGo".to_string(),
-                        keyword: "dd".to_string(),
-                        query: "https://duckduckgo.com/?q=%s".to_string(),
-                        default: false,
-                    },
-                    SearchEngine {
-                        icon: Some(brave_svg_path.into_os_string().into_string().unwrap()),
-                        tint_icon: true,
-                        name: "Brave Search".to_string(),
-                        keyword: "bs".to_string(),
-                        query: "https://search.brave.com/search?q=%s".to_string(),
-                        default: false,
-                    },
-                ];
-
-                serde_yaml::to_string(&search_engines).unwrap()
-            }
-            Setting::Extensions => "[]".to_owned(),
-        };
-    }
-
-    pub fn get_settings() -> Settings {
-        return Settings {
-            general: GeneralSettings {
-                first_key: Settings::get_setting(Setting::GeneralFirstKey),
-                second_key: Settings::get_setting(Setting::GeneralSecondKey),
-                third_key: Settings::get_setting(Setting::GeneralThirdKey),
-                limit: Settings::get_setting(Setting::GeneralLimit)
-                    .parse()
-                    .unwrap(),
-            },
-            search_box: SearchBoxSettings {
-                show_search_icon: Settings::get_setting(Setting::SearchBoxShowSearchIcon)
-                    .parse()
-                    .unwrap(),
-                show_settings_icon: Settings::get_setting(Setting::SearchBoxShowSettingsIcon)
-                    .parse()
-                    .unwrap(),
-                roundness: Settings::get_setting(Setting::SearchBoxRoundness)
-                    .parse()
-                    .unwrap(),
-                border_width: Settings::get_setting(SearchBoxBorderWidth).parse().unwrap(),
-            },
-            theme: Theme {
-                background: Settings::get_setting(ThemeBackground),
-                secondary_background: Settings::get_setting(ThemeSecondaryBackground),
-                tertiary_background: Settings::get_setting(ThemeTertiaryBackground),
-                accent: Settings::get_setting(ThemeAccent),
-                on_accent: Settings::get_setting(ThemeOnAccent),
-                danger: Settings::get_setting(ThemeDanger),
-                on_danger: Settings::get_setting(ThemeOnDanger),
-                text: Settings::get_setting(ThemeText),
-                secondary_text: Settings::get_setting(ThemeSecondaryText),
-            },
-            search_engines: serde_yaml::from_str(&Settings::get_setting(SearchEngines)).unwrap(),
-            extensions: serde_yaml::from_str(&Settings::get_setting(Extensions)).unwrap(),
-        };
-    }
-
-    pub fn update(settings: &Settings) {
-        let settings_path = get_settings_path().unwrap();
-        let settings_yaml =
-            &serde_yaml::to_string(&settings).expect("Error converting settings to yaml");
-
-        fs::write(&settings_path, settings_yaml).unwrap();
-    }
-
-    pub fn launch_shortcut() -> String {
-        let settings = Settings::get_settings();
-        let first_key = settings.general.first_key;
-        let second_key = settings.general.second_key;
-        let third_key = settings.general.third_key;
-
-        return match second_key.is_empty() || second_key.as_str() == "-" {
-            true => {
-                format!("{first_key}+{third_key}")
-            }
-            false => {
-                format!("{first_key}+{second_key}+{third_key}")
-            }
-        };
-    }
-
-    pub fn get_extension_setting(extension_id: &str, setting_id: &str) -> Result<String, String> {
-        let settings = Settings::get_settings();
-        let extensions_settings = settings.extensions;
-
-        for extension_setting in extensions_settings {
-            if extension_setting.id == extension_id {
-                for setting in extension_setting.settings.any {
-                    if setting.id == setting_id {
-                        return Ok(setting.current_value);
-                    }
-                }
-                for setting in extension_setting.settings.linux {
-                    if setting.id == setting_id {
-                        return Ok(setting.current_value);
-                    }
-                }
-                for setting in extension_setting.settings.windows {
-                    if setting.id == setting_id {
-                        return Ok(setting.current_value);
-                    }
-                }
-            }
-        }
-
-        return Err("Error getting extension settings".into());
-    }
-
-    pub fn update_extension_setting(extension_id: String, setting_id: String, new_value: String) {
-        let mut new_settings = Settings::get_settings();
-
-        for (extension_setting_index, extension_setting) in
-            Settings::get_settings().extensions.iter().enumerate()
-        {
-            if extension_setting.id == extension_id {
-                for (any_index, any_setting) in extension_setting.settings.any.iter().enumerate() {
-                    if any_setting.id == setting_id {
-                        new_settings.extensions[extension_setting_index]
-                            .settings
-                            .any[any_index]
-                            .current_value = new_value.clone();
-                    }
-                }
-
-                for (linux_index, linux_setting) in
-                    extension_setting.settings.linux.iter().enumerate()
-                {
-                    if linux_setting.id == setting_id {
-                        new_settings.extensions[extension_setting_index]
-                            .settings
-                            .linux[linux_index]
-                            .current_value = new_value.clone();
-                    }
-                }
-
-                for (windows_index, windows_setting) in
-                    extension_setting.settings.windows.iter().enumerate()
-                {
-                    if windows_setting.id == setting_id {
-                        new_settings.extensions[extension_setting_index]
-                            .settings
-                            .windows[windows_index]
-                            .current_value = new_value.clone();
-                    }
-                }
-            }
-        }
-
-        Settings::update(&new_settings);
-    }
-
-    pub fn update_extension_keyword(extension_id: String, keyword: String) {
-        let mut new_settings = Settings::get_settings();
-
-        for (extension_setting_index, extension_setting) in
-            Settings::get_settings().extensions.iter().enumerate()
-        {
-            if extension_setting.id == extension_id {
-                new_settings.extensions[extension_setting_index].keyword = keyword.clone();
-            }
-        }
-
-        Settings::update(&new_settings);
-    }
+/// Updates the app settings
+pub fn update_settings(settings: &Settings) {
+    let settings_yaml = serde_yaml::to_string(settings).unwrap();
+    fs::write(&get_settings_path().unwrap(), &settings_yaml).expect("Error writing settings file");
 }

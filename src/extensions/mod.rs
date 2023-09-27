@@ -1,19 +1,12 @@
-use crate::{
-    paths::{
-        get_extension_parameters_path, get_extension_results_path, get_extensions_index_path,
-        get_extensions_path,
-    },
-    results::SimpleKLResult,
-    settings::{ExtensionOptionSetting, ExtensionsSettings, Settings},
-};
+use crate::{paths::{
+    get_extension_parameters_path, get_extension_results_path,
+}, results::SimpleKLResult, settings};
 use serde::{Deserialize, Serialize};
-use std::{
-    fs::{self, File},
-    io::{Read, Write},
-    path::Path,
-};
+use std::{fs::{File}, fs, io::{Read, Write}};
+use std::path::Path;
 use std::process::exit;
-use crate::paths::get_temp_directory;
+use crate::paths::{get_extensions_index_path, get_extensions_path, get_settings_path, get_temp_directory};
+use crate::settings::{ExtensionOptionSetting, ExtensionsSettings, get_settings, update_settings};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Parameters {
@@ -55,7 +48,7 @@ pub fn emit_results(results: &Vec<SimpleKLResult>) {
     results_path_file
         .write_all(&results_yaml.as_bytes())
         .expect("Error writing extension results");
-    
+
     results_path_file
         .flush()
         .expect("Error closing extension results file");
@@ -96,9 +89,12 @@ pub struct ExtensionManifest {
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct ExtensionSettings {
-    pub any: Option<Vec<ExtensionSetting>>,
-    pub linux: Option<Vec<ExtensionSetting>>,
-    pub windows: Option<Vec<ExtensionSetting>>,
+    #[serde(default = "default_extension_setting")]
+    pub any: Vec<ExtensionSetting>,
+    #[serde(default = "default_extension_setting")]
+    pub linux: Vec<ExtensionSetting>,
+    #[serde(default = "default_extension_setting")]
+    pub windows: Vec<ExtensionSetting>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -124,8 +120,11 @@ pub struct ExtensionShowCondition {
     pub value: String,
 }
 
+fn default_extension_setting() -> Vec<ExtensionSetting> { return vec![]; }
+
+
 pub fn init_extensions() {
-    let extension_path = &get_extensions_path().unwrap();
+    let extension_path = &get_settings_path().unwrap();
     let mut extensions: Vec<ExtensionManifest> = Vec::new();
 
     if !Path::new(extension_path).exists() {
@@ -153,18 +152,19 @@ pub fn init_extensions() {
         }
     }
 
-    if !get_temp_directory().unwrap().exists(){
+    if !get_temp_directory().unwrap().exists() {
         fs::create_dir_all(get_temp_directory().unwrap())
             .expect("Error creating temp folder");
     }
 
     let mut extension_file = File::create(get_extensions_index_path().unwrap()).unwrap();
-    
+
     extension_file
         .write_all(serde_yaml::to_string(&extensions).unwrap().as_bytes())
         .unwrap();
 
-    let settings_extensions = Settings::get_settings().extensions;
+
+    let settings_extensions = get_settings().extensions;
 
     let mut new_settings_extensions: Vec<ExtensionsSettings> = Vec::new();
 
@@ -177,40 +177,34 @@ pub fn init_extensions() {
             let mut linux_settings: Vec<ExtensionOptionSetting> = Vec::new();
             let mut windows_settings: Vec<ExtensionOptionSetting> = Vec::new();
 
-            if let Some(settings) = extension.settings{
-
-                if let Some(manifest_any_settings) = settings.any{
-                    for any_setting in manifest_any_settings{
-                        any_settings.push(ExtensionOptionSetting{
-                            id: any_setting.id,
-                            current_value: any_setting.default_value
-                        })
-                    }
+            if let Some(settings) = extension.settings {
+                for any_setting in settings.any {
+                    any_settings.push(ExtensionOptionSetting {
+                        id: any_setting.id,
+                        current_value: any_setting.default_value,
+                    })
                 }
 
-                if let Some(manifest_linux_settings) = settings.linux{
-                    for linux_setting in manifest_linux_settings{
-                        linux_settings.push(ExtensionOptionSetting{
-                            id: linux_setting.id,
-                            current_value: linux_setting.default_value
-                        })
-                    }
+                for linux_setting in settings.linux {
+                    linux_settings.push(ExtensionOptionSetting {
+                        id: linux_setting.id,
+                        current_value: linux_setting.default_value,
+                    })
                 }
 
-                if let Some(manifest_windows_settings) = settings.windows{
-                    for windows_setting in manifest_windows_settings {
-                        windows_settings.push(ExtensionOptionSetting{
-                            id: windows_setting.id,
-                            current_value: windows_setting.default_value
-                        })
-                    }
+
+                for windows_setting in settings.windows {
+                    windows_settings.push(ExtensionOptionSetting {
+                        id: windows_setting.id,
+                        current_value: windows_setting.default_value,
+                    })
                 }
             }
 
             new_settings_extensions.push(ExtensionsSettings {
                 id: extension.id.clone(),
                 keyword: extension.keyword.clone(),
-                settings: crate::settings::ExtensionSetting {
+                settings: settings::ExtensionSetting {
                     any: any_settings,
                     linux: linux_settings,
                     windows: windows_settings,
@@ -223,10 +217,10 @@ pub fn init_extensions() {
                 Some(settings) => new_settings_extensions.push(ExtensionsSettings {
                     id: settings.id.clone(),
                     keyword: settings.keyword.clone(),
-                    settings: crate::settings::ExtensionSetting {
-                        any: settings.settings.any.clone(),
-                        linux: settings.settings.linux.clone(),
-                        windows: settings.settings.windows.clone(),
+                    settings: settings::ExtensionSetting {
+                        any: settings.to_owned().settings.any,
+                        linux: settings.to_owned().settings.linux,
+                        windows: settings.to_owned().settings.windows,
                     },
                 }),
                 None => {}
@@ -234,10 +228,10 @@ pub fn init_extensions() {
         }
     }
 
-    let mut new_settings = Settings::get_settings();
+    let mut new_settings = get_settings();
     new_settings.extensions = new_settings_extensions;
 
-    Settings::update(&new_settings);
+    update_settings(&new_settings);
 }
 
 pub fn get_extensions() -> Vec<ExtensionManifest> {
@@ -264,4 +258,57 @@ pub fn get_extensions() -> Vec<ExtensionManifest> {
     }
 
     return extensions;
+}
+
+pub fn update_extension_keyword(extension_id: &str, keyword: &str) {
+    let mut settings = get_settings();
+
+    for (index, setting) in get_settings().extensions.iter().enumerate() {
+        if setting.id == extension_id {
+            settings.extensions[index].keyword = keyword.to_owned();
+        }
+    }
+
+    update_settings(&settings);
+}
+
+pub fn update_extension_setting(extension_id: &str, setting_id: &str, value: &str) {
+    let mut settings = get_settings();
+
+    for (index, setting) in get_settings().extensions.iter().enumerate() {
+        if setting.id == extension_id {
+            for (any_index, any_setting) in setting.settings.any.iter().enumerate() {
+                if any_setting.id == setting_id {
+                    settings.extensions[index]
+                        .settings
+                        .any[any_index]
+                        .current_value = value.to_owned();
+                }
+            }
+
+            for (linux_index, linux_setting) in
+            setting.settings.linux.iter().enumerate()
+            {
+                if linux_setting.id == setting_id {
+                    settings.extensions[index]
+                        .settings
+                        .linux[linux_index]
+                        .current_value = value.to_owned();
+                }
+            }
+
+            for (windows_index, windows_setting) in
+            setting.settings.windows.iter().enumerate()
+            {
+                if windows_setting.id == setting_id {
+                    settings.extensions[index]
+                        .settings
+                        .windows[windows_index]
+                        .current_value = value.to_owned();
+                }
+            }
+        }
+    }
+
+    update_settings(&settings);
 }
