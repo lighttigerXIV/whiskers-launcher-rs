@@ -260,6 +260,26 @@ pub fn get_extensions() -> Vec<ExtensionManifest> {
     return extensions;
 }
 
+pub fn get_extension_setting(extension_id: &str, setting_id: &str) -> Option<String> {
+    let settings = get_settings();
+
+    for extension in settings.extensions {
+        if extension.id == extension_id {
+            for setting in extension.settings.any {
+                if setting.id == setting_id { return Some(setting.current_value); }
+            }
+            for setting in extension.settings.linux {
+                if setting.id == setting_id { return Some(setting.current_value); }
+            }
+            for setting in extension.settings.windows {
+                if setting.id == setting_id { return Some(setting.current_value); }
+            }
+        }
+    }
+
+    return None;
+}
+
 pub fn update_extension_keyword(extension_id: &str, keyword: &str) {
     let mut settings = get_settings();
 
