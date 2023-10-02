@@ -93,7 +93,7 @@ pub fn get_extensions_path() -> Option<PathBuf> {
     let mut path = get_local_dir().unwrap();
     path.push("extensions");
 
-    return Some(path)
+    return Some(path);
 }
 
 /// Gets the resources folder path.
@@ -148,6 +148,24 @@ pub fn get_dialog_action_path() -> Option<PathBuf> {
     return Some(path);
 }
 
+pub fn get_autostart_path() -> Option<PathBuf> {
+    return match env::consts::OS {
+        "linux" => {
+            let mut path = get_home_path().unwrap();
+            path.push(".config/autostart");
+
+            return Some(path)
+        }
+        "windows" => {
+            let mut path = Path::new(&env::var("APPDATA").unwrap()).to_owned();
+            path.push("Microsoft\\Windows\\Start Menu\\Programs\\Startup");
+
+            return Some(path)
+        }
+        _ => None
+    };
+}
+
 ///Gets the extension folder
 pub fn get_extension_directory(extension_id: &str) -> Option<PathBuf> {
     if let Ok(folders) = fs::read_dir(&get_extensions_path().unwrap()) {
@@ -176,7 +194,6 @@ pub fn get_extension_directory(extension_id: &str) -> Option<PathBuf> {
 
 
 pub fn get_extension_parameters_path() -> Option<PathBuf> {
-
     let mut path = get_temp_directory().unwrap();
     path.push("extension-parameters.yml");
 
@@ -184,7 +201,6 @@ pub fn get_extension_parameters_path() -> Option<PathBuf> {
 }
 
 pub fn get_extension_results_path() -> Option<PathBuf> {
-
     let mut path = get_temp_directory().unwrap();
     path.push("extension-results.yml");
 
