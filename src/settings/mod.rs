@@ -53,6 +53,8 @@ pub struct ResultsSettings {
     pub split_ui: bool,
     #[serde(default = "default_results_layout")]
     pub layout: LayoutSetting,
+    #[serde(default = "default_results_blacklist")]
+    pub blacklist: Vec<String>
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -192,6 +194,7 @@ fn default_results_settings() -> ResultsSettings {
         results_count: default_results_count(),
         split_ui: default_results_split_ui(),
         layout: default_results_layout(),
+        blacklist: default_results_blacklist(),
     };
 }
 
@@ -200,6 +203,8 @@ fn default_results_count() -> usize { return 6; }
 fn default_results_split_ui() -> bool { return false; }
 
 fn default_results_layout() -> LayoutSetting { return LayoutSetting::Medium; }
+
+fn default_results_blacklist() -> Vec<String> { return vec![]; }
 
 fn default_theme_settings() -> ThemeSettings {
     return ThemeSettings {
