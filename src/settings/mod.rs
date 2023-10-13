@@ -58,7 +58,6 @@ pub struct ResultsSettings {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(tag = "type")]
 pub enum LayoutSetting {
     Small,
     Medium,
@@ -124,7 +123,6 @@ pub struct ExtensionOptionSetting {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(tag = "type")]
 pub enum Setting {
     GeneralFirstKey,
     GeneralSecondKey,
