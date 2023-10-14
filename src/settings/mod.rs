@@ -1,7 +1,7 @@
+use crate::paths::get_settings_path;
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::fs::File;
-use serde::{Deserialize, Serialize};
-use crate::paths::get_settings_path;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Settings {
@@ -54,7 +54,7 @@ pub struct ResultsSettings {
     #[serde(default = "default_results_layout")]
     pub layout: LayoutSetting,
     #[serde(default = "default_results_blacklist")]
-    pub blacklist: Vec<String>
+    pub blacklist: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -159,13 +159,21 @@ fn default_general_settings() -> GeneralSettings {
     };
 }
 
-fn default_general_first_key() -> String { return "ctrl".to_owned(); }
+fn default_general_first_key() -> String {
+    return "ctrl".to_owned();
+}
 
-fn default_general_second_key() -> String { return "-".to_owned(); }
+fn default_general_second_key() -> String {
+    return "-".to_owned();
+}
 
-fn default_general_third_key() -> String { return "space".to_owned(); }
+fn default_general_third_key() -> String {
+    return "space".to_owned();
+}
 
-fn default_general_auto_start() -> bool { return true; }
+fn default_general_auto_start() -> bool {
+    return true;
+}
 
 fn default_search_settings() -> SearchSettings {
     return SearchSettings {
@@ -177,15 +185,25 @@ fn default_search_settings() -> SearchSettings {
     };
 }
 
-fn default_search_show_settings_icon() -> bool { return true; }
+fn default_search_show_settings_icon() -> bool {
+    return true;
+}
 
-fn default_search_show_search_icon() -> bool { return true; }
+fn default_search_show_search_icon() -> bool {
+    return true;
+}
 
-fn default_search_show_placeholder() -> bool { return true; }
+fn default_search_show_placeholder() -> bool {
+    return true;
+}
 
-fn default_search_border_radius() -> usize { return 14; }
+fn default_search_border_radius() -> usize {
+    return 14;
+}
 
-fn default_search_border_width() -> usize { return 4; }
+fn default_search_border_width() -> usize {
+    return 4;
+}
 
 fn default_results_settings() -> ResultsSettings {
     return ResultsSettings {
@@ -196,13 +214,21 @@ fn default_results_settings() -> ResultsSettings {
     };
 }
 
-fn default_results_count() -> usize { return 6; }
+fn default_results_count() -> usize {
+    return 6;
+}
 
-fn default_results_split_ui() -> bool { return false; }
+fn default_results_split_ui() -> bool {
+    return false;
+}
 
-fn default_results_layout() -> LayoutSetting { return LayoutSetting::Medium; }
+fn default_results_layout() -> LayoutSetting {
+    return LayoutSetting::Medium;
+}
 
-fn default_results_blacklist() -> Vec<String> { return vec![]; }
+fn default_results_blacklist() -> Vec<String> {
+    return vec![];
+}
 
 fn default_theme_settings() -> ThemeSettings {
     return ThemeSettings {
@@ -218,31 +244,57 @@ fn default_theme_settings() -> ThemeSettings {
     };
 }
 
-fn default_theme_background() -> String { return "#24273a".to_owned(); }
+fn default_theme_background() -> String {
+    return "#24273a".to_owned();
+}
 
-fn default_theme_secondary_background() -> String { return "#181926".to_owned(); }
+fn default_theme_secondary_background() -> String {
+    return "#181926".to_owned();
+}
 
-fn default_theme_tertiary_background() -> String { return "#1e2030".to_owned(); }
+fn default_theme_tertiary_background() -> String {
+    return "#1e2030".to_owned();
+}
 
-fn default_theme_accent() -> String { return "#8aadf4".to_owned(); }
+fn default_theme_accent() -> String {
+    return "#8aadf4".to_owned();
+}
 
-fn default_theme_on_accent() -> String { return "#181926".to_owned(); }
+fn default_theme_on_accent() -> String {
+    return "#181926".to_owned();
+}
 
-fn default_theme_danger() -> String { return "#ed8796".to_owned(); }
+fn default_theme_danger() -> String {
+    return "#ed8796".to_owned();
+}
 
-fn default_theme_on_danger() -> String { return "#181926".to_owned(); }
+fn default_theme_on_danger() -> String {
+    return "#181926".to_owned();
+}
 
-fn default_theme_text() -> String { return "#cad3f5".to_owned(); }
+fn default_theme_text() -> String {
+    return "#cad3f5".to_owned();
+}
 
-fn default_theme_secondary_text() -> String { return "#b8c0e0".to_owned(); }
+fn default_theme_secondary_text() -> String {
+    return "#b8c0e0".to_owned();
+}
 
-fn default_search_engines() -> Vec<SearchEngineSettings> { return vec![]; }
+fn default_search_engines() -> Vec<SearchEngineSettings> {
+    return vec![];
+}
 
-fn default_search_engine_tint_icon() -> bool { return false; }
+fn default_search_engine_tint_icon() -> bool {
+    return false;
+}
 
-fn default_search_engine_default() -> bool { return false; }
+fn default_search_engine_default() -> bool {
+    return false;
+}
 
-fn default_extensions() -> Vec<ExtensionsSettings> { return vec![]; }
+fn default_extensions() -> Vec<ExtensionsSettings> {
+    return vec![];
+}
 
 fn default_extension_setting() -> ExtensionSetting {
     return ExtensionSetting {
@@ -252,10 +304,11 @@ fn default_extension_setting() -> ExtensionSetting {
     };
 }
 
-fn default_extension_option_setting() -> Vec<ExtensionOptionSetting> { return vec![]; }
+fn default_extension_option_setting() -> Vec<ExtensionOptionSetting> {
+    return vec![];
+}
 
 //Functions
-
 
 /// Returns the app settings
 pub fn get_settings() -> Settings {
@@ -266,18 +319,21 @@ pub fn get_settings() -> Settings {
     return settings;
 }
 
-
 /// Creates a settings file if it doesn't exist
 pub fn init_settings() {
-    let path = get_settings_path().unwrap();
+    let settings_file_path = get_settings_path().unwrap();
+    let settings_folder = settings_file_path.parent().unwrap();
 
-    if !&path.exists() {
-        File::create(&path).expect("Error creating settings file");
+    if !settings_folder.exists() {
+        fs::create_dir_all(&settings_folder).expect("Error creating settings folder");
+    }
+
+    if !&settings_file_path.exists() {
+        File::create(&settings_file_path).expect("Error creating settings file");
         let settings_yaml = serde_yaml::to_string(&get_settings()).unwrap();
-        fs::write(&path, &settings_yaml).expect("Error writing settings file");
+        fs::write(&settings_file_path, &settings_yaml).expect("Error writing settings file");
     }
 }
-
 
 /// Updates the app settings
 pub fn update_settings(settings: &Settings) {
