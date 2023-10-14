@@ -1,6 +1,6 @@
-use crate::paths::get_settings_path;
+use crate::paths::{get_settings_path, get_autostart_path};
 use serde::{Deserialize, Serialize};
-use std::fs;
+use std::{fs, env};
 use std::fs::File;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -198,11 +198,11 @@ fn default_search_show_placeholder() -> bool {
 }
 
 fn default_search_border_radius() -> usize {
-    return 14;
+    return 20;
 }
 
 fn default_search_border_width() -> usize {
-    return 4;
+    return 2;
 }
 
 fn default_results_settings() -> ResultsSettings {
@@ -339,4 +339,49 @@ pub fn init_settings() {
 pub fn update_settings(settings: &Settings) {
     let settings_yaml = serde_yaml::to_string(settings).unwrap();
     fs::write(&get_settings_path().unwrap(), &settings_yaml).expect("Error writing settings file");
+}
+
+
+/// Creates/Removes a shortcut to the autostart folder
+pub fn update_auto_start() {
+    let path = get_autostart_path().unwrap();
+    let settings = get_settings();
+    let auto_start = settings.general.auto_start;
+
+    if !path.exists() && auto_start {
+        fs::create_dir_all(&path).expect("Error creating autostart folder");
+    }
+
+    match env::consts::OS {
+        "linux" => {
+            let desktop_file_content = include_str!("../assets/files/simple-kl-service.desktop");
+            let mut desktop_file_path = path.to_owned();
+            desktop_file_path.push("simple-kl-service.desktop");
+
+            if auto_start {
+                fs::write(&desktop_file_path, &desktop_file_content)
+                    .expect("Error creating autostart file");
+            } else {
+                if desktop_file_path.exists() {
+                    fs::remove_file(&desktop_file_path).expect("Error removing autostart file");
+                }
+            }
+        }
+        #[cfg(target_os = "windows")]
+        "windows" => {
+            let script = if auto_start { "enable-autostart.ps1" } else { "disable-autostart.ps1" };
+
+            let mut path = get_local_dir().unwrap();
+            path.push("scripts");
+            path.push(script);
+
+            Command::new("powershell")
+                .arg("-File")
+                .arg(&path.into_os_string().into_string().unwrap())
+                .creation_flags(FLAG_NO_WINDOW)
+                .output()
+                .expect("Error running autostart script");
+        }
+        _ => {}
+    }
 }
