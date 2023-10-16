@@ -5,12 +5,6 @@ use std::process::Command;
 use std::{fs, env};
 use std::fs::File;
 
-#[cfg(target_os = "windows")]
-use {
-    crate::others::FLAG_NO_WINDOW,
-    std::os::windows::process::CommandExt
-};
-
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Settings {
@@ -384,12 +378,8 @@ pub fn update_auto_start() {
             path.push("resources\\ps-scripts");
             path.push(script);
 
-            Command::new("powershell")
-                .arg("-File")
-                .arg(&path.into_os_string().into_string().unwrap())
-                .creation_flags(FLAG_NO_WINDOW)
-                .output()
-                .expect("Error running autostart script");
+            let script_content = fs::read_to_string(&path).unwrap();
+            powershell_script::run(&script_content).expect("Error running autostart script");
         }
         _ => {}
     }
