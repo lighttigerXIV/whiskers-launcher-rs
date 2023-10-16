@@ -381,7 +381,7 @@ pub fn update_auto_start() {
             let script = if auto_start { "enable-autostart.ps1" } else { "disable-autostart.ps1" };
 
             let mut path = get_local_dir().unwrap();
-            path.push("scripts");
+            path.push("resources\\ps-scripts");
             path.push(script);
 
             Command::new("powershell")
