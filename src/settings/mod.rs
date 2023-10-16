@@ -315,7 +315,7 @@ fn default_search_engines() -> Vec<SearchEngineSettings> {
         icon: Some(duckduckgo_icon.into_os_string().into_string().unwrap()),
         tint_icon: true,
         name: String::from("DuckDuckGo"),
-        query: String::from("https://duckduckgo.com/search?q=%s"),
+        query: String::from("https://duckduckgo.com/?q=%s"),
         default: false
     });
 
