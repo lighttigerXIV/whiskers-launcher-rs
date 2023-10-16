@@ -1,5 +1,5 @@
 
-use crate::paths::{get_settings_path, get_autostart_path, get_local_dir};
+use crate::paths::{get_settings_path, get_autostart_path, get_local_dir, get_resources_directory};
 use serde::{Deserialize, Serialize};
 use std::process::Command;
 use std::{fs, env};
@@ -287,7 +287,48 @@ fn default_theme_secondary_text() -> String {
 }
 
 fn default_search_engines() -> Vec<SearchEngineSettings> {
-    return vec![];
+
+    let mut search_engines: Vec<SearchEngineSettings> = vec![];
+    let mut icons_dir = get_resources_directory().unwrap();
+    icons_dir.push("icons");
+
+    let mut google_icon = icons_dir.to_owned();
+    google_icon.push("google.svg");
+
+    let mut duckduckgo_icon = icons_dir.to_owned();
+    duckduckgo_icon.push("duckduckgo.svg");
+
+    let mut brave_icon = icons_dir.to_owned();
+    brave_icon.push("brave.svg");
+
+    search_engines.push(SearchEngineSettings{
+        keyword: String::from("gg"),
+        icon: Some(google_icon.into_os_string().into_string().unwrap()),
+        tint_icon: true,
+        name: String::from("Google"),
+        query: String::from("https://www.google.com/search?q=%s"),
+        default: true
+    });
+
+    search_engines.push(SearchEngineSettings{
+        keyword: String::from("dd"),
+        icon: Some(duckduckgo_icon.into_os_string().into_string().unwrap()),
+        tint_icon: true,
+        name: String::from("DuckDuckGo"),
+        query: String::from("https://duckduckgo.com/search?q=%s"),
+        default: false
+    });
+
+    search_engines.push(SearchEngineSettings{
+        keyword: String::from("bs"),
+        icon: Some(brave_icon.into_os_string().into_string().unwrap()),
+        tint_icon: true,
+        name: String::from("Brave Search"),
+        query: String::from("https://search.brave.com/search?q=%s"),
+        default: false
+    });
+
+    return search_engines;
 }
 
 fn default_search_engine_tint_icon() -> bool {
