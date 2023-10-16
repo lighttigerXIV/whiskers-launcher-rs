@@ -205,7 +205,7 @@ fn default_search_border_radius() -> usize {
 }
 
 fn default_search_border_width() -> usize {
-    return 2;
+    return 1;
 }
 
 fn default_results_settings() -> ResultsSettings {
@@ -226,7 +226,10 @@ fn default_results_split_ui() -> bool {
 }
 
 fn default_results_layout() -> LayoutSetting {
-    return LayoutSetting::Medium;
+    return match env::consts::OS {
+        "linux" => LayoutSetting::Medium,
+        _=> LayoutSetting::Small
+    };
 }
 
 fn default_results_blacklist() -> Vec<String> {
