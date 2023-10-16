@@ -1,7 +1,16 @@
-use crate::paths::{get_settings_path, get_autostart_path};
+
+use crate::paths::{get_settings_path, get_autostart_path, get_local_dir};
 use serde::{Deserialize, Serialize};
+use std::process::Command;
 use std::{fs, env};
 use std::fs::File;
+
+#[cfg(target_os = "windows")]
+use {
+    crate::others::FLAG_NO_WINDOW,
+    std::os::windows::process::CommandExt
+};
+
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Settings {
