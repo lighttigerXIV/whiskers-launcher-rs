@@ -49,7 +49,7 @@ pub struct DialogAction {
     pub action: String,
     pub button_text: String,
     pub fields: Vec<DialogField>,
-    pub args: Option<Vec<String>>
+    pub args: Vec<String>
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -92,7 +92,7 @@ impl DialogAction {
             action: action.to_owned(),
             button_text: "OK".to_owned(),
             fields: vec![],
-            args: None
+            args: vec![]
         };
     }
 
@@ -106,7 +106,7 @@ impl DialogAction {
         self.to_owned()
     }
 
-    pub fn args(&mut self, args: Option<Vec<String>>) -> Self{
+    pub fn args(&mut self, args: Vec<String>) -> Self{
         self.args = args.to_owned();
         self.to_owned()
     }
