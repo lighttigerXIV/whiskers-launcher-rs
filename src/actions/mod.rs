@@ -49,6 +49,7 @@ pub struct DialogAction {
     pub action: String,
     pub button_text: String,
     pub fields: Vec<DialogField>,
+    pub args: Option<Vec<String>>
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -91,6 +92,7 @@ impl DialogAction {
             action: action.to_owned(),
             button_text: "OK".to_owned(),
             fields: vec![],
+            args: None
         };
     }
 
