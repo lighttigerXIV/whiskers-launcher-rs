@@ -96,14 +96,19 @@ impl DialogAction {
         };
     }
 
-    pub fn button_text(&mut self, button_text: &str) -> &mut Self {
+    pub fn button_text(&mut self, button_text: &str) -> Self {
         self.button_text = button_text.to_owned();
-        self
+        self.to_owned()
     }
 
-    pub fn fields(&mut self, fields: Vec<DialogField>) -> &mut DialogAction {
+    pub fn fields(&mut self, fields: Vec<DialogField>) -> Self {
         self.fields = fields.to_owned();
-        self
+        self.to_owned()
+    }
+
+    pub fn args(&mut self, args: Option<Vec<String>>) -> Self{
+        self.args = args.to_owned();
+        self.to_owned()
     }
 }
 
