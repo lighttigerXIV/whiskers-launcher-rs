@@ -73,6 +73,7 @@ impl DialogResult {
 pub struct DialogFieldResult {
     pub field_id: String,
     pub value: String,
+    pub args: Vec<String>
 }
 
 impl DialogFieldResult {
@@ -80,7 +81,13 @@ impl DialogFieldResult {
         return DialogFieldResult {
             field_id: field_id.to_owned(),
             value: value.to_owned(),
+            args: vec![]
         };
+    }
+
+    pub fn args(&mut self,args: Vec<String>) -> Self{
+        self.args = args;
+        self.to_owned()
     }
 }
 
