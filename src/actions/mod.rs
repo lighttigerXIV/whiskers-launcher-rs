@@ -57,14 +57,16 @@ pub struct DialogResult {
     pub extension_id: String,
     pub action: String,
     pub results: Vec<DialogFieldResult>,
+    pub args: Vec<String>
 }
 
 impl DialogResult {
-    pub fn new(extension_id: &str, action: &str, results: Vec<DialogFieldResult>) -> Self {
+    pub fn new(extension_id: &str, action: &str, results: Vec<DialogFieldResult>, args: Vec<String>) -> Self {
         return DialogResult {
             extension_id: extension_id.to_owned(),
             action: action.to_owned(),
             results,
+            args
         };
     }
 }
