@@ -90,7 +90,7 @@ impl DialogAction {
             extension_id: extension_id.to_owned(),
             title: title.to_owned(),
             action: action.to_owned(),
-            button_text: "OK".to_owned(),
+            button_text: "Ok".to_owned(),
             fields: vec![],
             args: vec![]
         };
@@ -146,9 +146,9 @@ pub struct InputField {
 
 
 impl InputField {
-    pub fn new() -> Self {
+    pub fn new(id: &str) -> Self {
         return InputField {
-            id: "".to_owned(),
+            id: id.to_owned(),
             value: "".to_owned(),
             title: Some("".to_owned()),
             description: Some("".to_owned()),
@@ -156,30 +156,25 @@ impl InputField {
         };
     }
 
-    pub fn id(&mut self, id: &str) -> &mut Self {
-        self.id = id.to_owned();
-        self
-    }
-
-    pub fn value(&mut self, value: &str) -> &mut Self {
+    pub fn value(&mut self, value: &str) -> Self {
         self.value = value.to_owned();
-        self
+        self.to_owned()
     }
 
-    pub fn title(&mut self, title: &str) -> &mut Self {
+    pub fn title(&mut self, title: &str) -> Self {
         self.title = Some(title.to_owned());
-        self
+        self.to_owned()
     }
 
 
-    pub fn description(&mut self, description: &str) -> &mut Self {
+    pub fn description(&mut self, description: &str) -> Self {
         self.description = Some(description.to_owned());
-        self
+        self.to_owned()
     }
 
-    pub fn placeholder(&mut self, placeholder: &str) -> &mut Self {
+    pub fn placeholder(&mut self, placeholder: &str) -> Self {
         self.placeholder = Some(placeholder.to_owned());
-        self
+        self.to_owned()
     }
 }
 
@@ -250,14 +245,14 @@ impl CheckGroup {
         };
     }
 
-    pub fn description(&mut self, description: &str) -> &mut Self {
+    pub fn description(&mut self, description: &str) -> Self {
         self.description = Some(description.to_owned());
-        self
+        self.to_owned()
     }
 
-    pub fn options(&mut self, options: Vec<CheckOption>) -> &mut Self {
+    pub fn options(&mut self, options: Vec<CheckOption>) -> Self {
         self.options = options;
-        self
+        self.to_owned()
     }
 }
 
@@ -279,14 +274,14 @@ impl CheckOption {
         };
     }
 
-    pub fn checked(&mut self, checked: bool) -> &mut Self {
+    pub fn checked(&mut self, checked: bool) -> Self {
         self.checked = checked;
-        self
+        self.to_owned()
     }
 
-    pub fn description(&mut self, description: &str) -> &mut Self {
+    pub fn description(&mut self, description: &str) -> Self {
         self.description = Some(description.to_owned());
-        self
+        self.to_owned()
     }
 }
 

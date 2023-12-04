@@ -2,7 +2,7 @@ use crate::{paths::{
     get_extension_parameters_path, get_extension_results_path,
 }, results::SimpleKLResult, settings};
 use serde::{Deserialize, Serialize};
-use std::{fs::{File}, fs, io::{Read, Write}};
+use std::{fs::File, fs, io::{Read, Write}};
 use std::path::Path;
 use std::process::exit;
 use crate::paths::{get_extensions_index_path, get_extensions_path, get_temp_directory};
