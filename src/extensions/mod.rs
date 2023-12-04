@@ -22,21 +22,24 @@ pub enum Function {
     RunAction,
 }
 
-/// Returns
 pub fn get_parameters() -> Option<Parameters> {
     let mut parameters_file =
         File::open(get_extension_parameters_path().unwrap()).expect("Error opening parameters file");
-    let mut parameters_json = String::from("");
+    let mut parameters_yaml = String::from("");
+
+
 
     parameters_file
-        .read_to_string(&mut parameters_json)
+        .read_to_string(&mut parameters_yaml)
         .expect("Error reading parameters file");
 
     parameters_file
         .flush()
         .expect("Error closing parameters file");
 
-    let parameters = serde_yaml::from_str(&parameters_json).expect("Error getting parameters");
+
+
+    let parameters: Parameters = serde_yaml::from_str(&parameters_yaml).expect("Error getting parameters");
     return Some(parameters);
 }
 

@@ -343,7 +343,8 @@ impl ExtensionAction {
 
 pub fn get_dialog_results() -> Option<Vec<DialogFieldResult>> {
     let parameters = get_parameters()?;
-    let results = serde_yaml::from_str(&parameters.custom_args?[0]).ok()?;
+    let fields_yaml = parameters.custom_args?.get(0)?.to_owned();
+    let results = serde_yaml::from_str(&fields_yaml).unwrap_or(vec![]);
 
     return Some(results);
 }
