@@ -2,8 +2,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 pub mod actions;
-pub mod results;
+pub mod api;
+pub mod dialog;
 pub mod extensions;
+pub mod results;
 pub mod paths;
+pub mod utils;
 pub mod settings;
-pub mod others;

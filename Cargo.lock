@@ -875,17 +875,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde_json"
-version = "1.0.106"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2cc66a619ed80bf7a0f6b17dd063a84b88f6dea1813737cf469aef1d081142c2"
-dependencies = [
- "itoa",
- "ryu",
- "serde",
-]
-
-[[package]]
 name = "serde_repr"
 version = "0.1.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -947,7 +936,6 @@ dependencies = [
  "notify-rust",
  "powershell_script",
  "serde",
- "serde_json",
  "serde_yaml",
 ]
 
