@@ -29,7 +29,7 @@ pub fn get_temp_dir() -> Option<PathBuf> {
             Some(tmp_path)
         }
         //Unix Systems
-        _ => Some(Path::new("/tmp/simple-kl-runtime/").to_owned()),
+        _ => Some(Path::new("/tmp/simple-kl-runtime").to_owned()),
     };
 }
 
@@ -39,14 +39,14 @@ pub fn get_extension_results_path() -> Option<PathBuf> {
         Some(path) => path
     };
 
-    path.push("ExtensionResults.yml");
+    path.push("ExtensionResults.bin");
     return Some(path);
 }
 
 pub fn get_extension_context_path() -> Option<PathBuf> {
     let mut path = get_temp_dir()?;
 
-    path.push("ExtensionContext.yml");
+    path.push("ExtensionContext.bin");
     return Some(path);
 }
 
@@ -56,7 +56,7 @@ pub fn get_dialog_results_path() -> Option<PathBuf> {
         Some(path) => path
     };
 
-    path.push("DialogResults.yml");
+    path.push("DialogResults.bin");
     return Some(path);
 }
 
@@ -86,13 +86,13 @@ pub fn get_indexing_icons_dir() -> Option<PathBuf> {
 
 pub fn get_indexing_extensions_path() -> Option<PathBuf> {
     let mut path = get_indexing_dir()?;
-    path.push("Extensions.yml");
+    path.push("Extensions.bin");
     return Some(path);
 }
 
 pub fn get_indexing_apps_path() -> Option<PathBuf> {
     let mut path = get_indexing_dir()?;
-    path.push("Apps.yml");
+    path.push("Apps.bin");
     return Some(path);
 }
 

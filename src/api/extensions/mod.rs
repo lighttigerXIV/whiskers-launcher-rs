@@ -16,8 +16,8 @@ impl Context {
         };
     }
 
-    pub fn search_text(&mut self, search_text: String) -> Self {
-        self.search_text = Some(search_text);
+    pub fn search_text(&mut self, search_text: impl Into<String>) -> Self {
+        self.search_text = Some(search_text.into());
         self.to_owned()
     }
 
