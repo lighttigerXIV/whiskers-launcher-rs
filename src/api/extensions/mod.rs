@@ -1,10 +1,13 @@
+use std::{fs, io};
+use bincode::deserialize;
 use serde::{Deserialize, Serialize};
+use crate::paths::get_extension_context_path;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Context {
     pub action: Action,
     pub search_text: Option<String>,
-    pub custom_args: Option<Vec<String>>,
+    pub custom_args: Vec<String>,
 }
 
 impl Context {
@@ -12,7 +15,7 @@ impl Context {
         return Self {
             action,
             search_text: None,
-            custom_args: None,
+            custom_args: vec![],
         };
     }
 
@@ -22,7 +25,7 @@ impl Context {
     }
 
     pub fn custom_args(&mut self, custom_args: Vec<String>) -> Self {
-        self.custom_args = Some(custom_args);
+        self.custom_args = custom_args;
         self.to_owned()
     }
 }
@@ -67,4 +70,25 @@ pub mod manifest{
         pub setting_id: String,
         pub setting_value: String
     }
+}
+
+// =====================================================
+// Functions
+// =====================================================
+
+pub fn write_context(context: Context) -> io::Result<()>{
+    let file_path = get_extension_context_path().ok_or(()).unwrap();
+    let serialized_context = bincode::serialize(&context).map_err(|_|()).unwrap();
+    fs::write(file_path, &serialized_context).map_err(|_|()).unwrap();
+
+    return Ok(());
+}
+
+pub fn get_extension_context() -> Option<Context>{
+
+    let context_path = get_extension_context_path()?;
+    let file_content = fs::read(context_path).ok()?;
+    let deserialized_context: Context = deserialize(&file_content).ok()?;
+
+    return Some(deserialized_context);
 }
