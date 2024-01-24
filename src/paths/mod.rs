@@ -39,14 +39,14 @@ pub fn get_extension_results_path() -> Option<PathBuf> {
         Some(path) => path
     };
 
-    path.push("ExtensionResults.bin");
+    path.push("ExtensionResults.json");
     return Some(path);
 }
 
 pub fn get_extension_context_path() -> Option<PathBuf> {
     let mut path = get_temp_dir()?;
 
-    path.push("ExtensionContext.bin");
+    path.push("ExtensionContext.json");
     return Some(path);
 }
 
@@ -56,7 +56,7 @@ pub fn get_dialog_results_path() -> Option<PathBuf> {
         Some(path) => path
     };
 
-    path.push("DialogResults.bin");
+    path.push("DialogResults.json");
     return Some(path);
 }
 
@@ -86,13 +86,13 @@ pub fn get_indexing_icons_dir() -> Option<PathBuf> {
 
 pub fn get_indexing_extensions_path() -> Option<PathBuf> {
     let mut path = get_indexing_dir()?;
-    path.push("Extensions.bin");
+    path.push("Extensions.json");
     return Some(path);
 }
 
 pub fn get_indexing_apps_path() -> Option<PathBuf> {
     let mut path = get_indexing_dir()?;
-    path.push("Apps.bin");
+    path.push("Apps.json");
     return Some(path);
 }
 
