@@ -1,6 +1,6 @@
-use std::{fs, io};
+use std::{env, fs, io};
 use serde::{Deserialize, Serialize};
-use crate::paths::{get_app_resources_icons_dir, get_settings_path};
+use crate::paths::{get_app_resources_icons_dir, get_autostart_path, get_settings_path};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Settings {
@@ -328,10 +328,56 @@ pub fn get_settings() -> Option<Settings> {
     };
 }
 
-pub fn update_settings(settings: Settings)-> io::Result<()>{
+pub fn update_settings(settings: Settings) -> io::Result<()> {
+
+    //Updates Settings
+    let original_settings = get_settings().ok_or(()).unwrap();
     let settings_path = get_settings_path().ok_or(()).unwrap();
-    let json_settings = serde_json::to_string_pretty(&settings).map_err(|_|()).unwrap();
-    fs::write(&settings_path, &json_settings).map_err(|_|()).unwrap();
+    let json_settings = serde_json::to_string_pretty(&settings).map_err(|_| ()).unwrap();
+    fs::write(&settings_path, &json_settings).map_err(|_| ()).unwrap();
+
+    if original_settings.auto_start != settings.auto_start {
+        let path = get_autostart_path().ok_or(()).unwrap();
+        let settings = get_settings().ok_or(()).unwrap();
+
+        if !path.exists() && settings.auto_start {
+            fs::create_dir_all(&path.parent().ok_or(()).unwrap()).map_err(|_| ()).unwrap();
+        }
+
+        match env::consts::OS {
+            "linux" => {
+                let desktop_content = r#"[Desktop Entry]
+Version=0.1
+Type=Application
+Name=Simple KL Service
+Comment=Simple KL Service
+Exec=/usr/bin/simple-kl-service"#;
+
+                let mut desktop_file_path = path.to_owned();
+                desktop_file_path.push("simple-kl-service.desktop");
+
+                if settings.auto_start {
+                    fs::write(&desktop_file_path, &desktop_content).map_err(|_| ()).unwrap();
+                } else {
+                    if desktop_file_path.exists() {
+                        fs::remove_file(&desktop_file_path).map_err(|_| ()).unwrap();
+                    }
+                }
+            }
+            #[cfg(target_os = "windows")]
+            "windows" => {
+                let script = if auto_start { "enable-autostart.ps1" } else { "disable-autostart.ps1" };
+
+                let mut path = get_local_dir().unwrap();
+                path.push("resources\\ps-scripts");
+                path.push(script);
+
+                let script_content = fs::read_to_string(&path).map_err(|_| ()).unwrap();
+                powershell_script::run(&script_content).map_err(|_| ()).unwrap();
+            }
+            _ => {}
+        }
+    }
 
     Ok(())
 }

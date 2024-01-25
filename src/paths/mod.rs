@@ -131,3 +131,21 @@ pub fn get_settings_path() -> Option<PathBuf> {
     };
 }
 
+pub fn get_autostart_path() -> Option<PathBuf> {
+    return match env::consts::OS {
+        "linux" => {
+            let mut path = get_home_dir()?;
+            path.push(".config/autostart");
+
+            return Some(path)
+        }
+        "windows" => {
+            let mut path = Path::new(&env::var("APPDATA").map_err(|_|()).unwrap()).to_owned();
+            path.push("Microsoft\\Windows\\Start Menu\\Programs\\Startup");
+
+            return Some(path)
+        }
+        _ => None
+    };
+}
+
