@@ -78,7 +78,7 @@ pub mod manifest {
 // Functions
 // =====================================================
 
-pub fn write_extension_context(context: Context) -> io::Result<()> {
+pub fn send_extension_context(context: Context) -> io::Result<()> {
     let file_path = get_extension_context_path().ok_or(()).unwrap();
     let json_context = serde_json::to_string(&context).map_err(|_| ()).unwrap();
     fs::write(file_path, &json_context).map_err(|_| ()).unwrap();
@@ -94,8 +94,7 @@ pub fn get_extension_context() -> Option<Context> {
     return Some(deserialized_context);
 }
 
-pub fn write_extension_results(results: Vec<SimpleKLResult>) {
-
+pub fn send_extension_results(results: Vec<SimpleKLResult>) {
     let file_path = get_extension_results_path().unwrap();
     let json_results = serde_json::to_string(&results).unwrap();
     fs::write(file_path, &json_results).unwrap();
@@ -104,7 +103,6 @@ pub fn write_extension_results(results: Vec<SimpleKLResult>) {
 }
 
 pub fn get_extension_results() -> Option<Vec<SimpleKLResult>> {
-
     let file_path = get_extension_results_path()?;
     let file_content = read_to_string(&file_path).ok()?;
     let extension_results = serde_json::from_str(&file_content).ok()?;

@@ -33,20 +33,24 @@ pub fn get_temp_dir() -> Option<PathBuf> {
     };
 }
 
+pub fn get_home_dir() -> Option<PathBuf> {
+    return home_dir();
+}
+
 pub fn get_extension_results_path() -> Option<PathBuf> {
     let mut path = match get_temp_dir() {
         None => { return None; }
         Some(path) => path
     };
 
-    path.push("ExtensionResults.json");
+    path.push("extension_results.json");
     return Some(path);
 }
 
 pub fn get_extension_context_path() -> Option<PathBuf> {
     let mut path = get_temp_dir()?;
 
-    path.push("ExtensionContext.json");
+    path.push("extension_context.json");
     return Some(path);
 }
 
@@ -56,7 +60,7 @@ pub fn get_dialog_results_path() -> Option<PathBuf> {
         Some(path) => path
     };
 
-    path.push("DialogResults.json");
+    path.push("dialog_results.json");
     return Some(path);
 }
 
@@ -86,13 +90,13 @@ pub fn get_indexing_icons_dir() -> Option<PathBuf> {
 
 pub fn get_indexing_extensions_path() -> Option<PathBuf> {
     let mut path = get_indexing_dir()?;
-    path.push("Extensions.json");
+    path.push("extensions.json");
     return Some(path);
 }
 
 pub fn get_indexing_apps_path() -> Option<PathBuf> {
     let mut path = get_indexing_dir()?;
-    path.push("Apps.json");
+    path.push("apps.json");
     return Some(path);
 }
 
@@ -107,3 +111,23 @@ pub fn get_app_resources_icons_dir() -> Option<PathBuf> {
     path.push("Icons");
     return Some(path);
 }
+
+pub fn get_settings_path() -> Option<PathBuf> {
+    return match env::consts::OS {
+        "windows" => {
+            let mut path = get_local_dir()?;
+            path.push("settings.json");
+
+            Some(path)
+        }
+        //Unix Systems
+        _ => {
+
+            let mut path = get_home_dir()?;
+            path.push(".config/simple-kl/settings.json");
+
+            Some(path)
+        },
+    };
+}
+
