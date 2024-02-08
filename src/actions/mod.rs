@@ -1,6 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::dialog::DialogField;
-
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "type")]
@@ -10,7 +9,7 @@ pub enum Action {
     CopyToClipboard(CopyToClipboard),
     Extension(Extension),
     Dialog(Dialog),
-    Nothing
+    Nothing,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -20,9 +19,7 @@ pub struct OpenApp {
 
 impl OpenApp {
     pub fn new(path: impl Into<String>) -> Self {
-        return Self {
-            path: path.into()
-        };
+        return Self { path: path.into() };
     }
 }
 
@@ -33,9 +30,7 @@ pub struct OpenUrl {
 
 impl OpenUrl {
     pub fn new(url: impl Into<String>) -> Self {
-        return Self {
-            url: url.into()
-        };
+        return Self { url: url.into() };
     }
 }
 
@@ -46,9 +41,7 @@ pub struct CopyToClipboard {
 
 impl CopyToClipboard {
     pub fn new(text: impl Into<String>) -> Self {
-        return Self {
-            text: text.into()
-        };
+        return Self { text: text.into() };
     }
 }
 
@@ -79,6 +72,25 @@ pub struct Dialog {
     pub extension_id: String,
     pub extension_action: String,
     pub fields: Vec<DialogField>,
-    pub custom_args: Option<Vec<String>>,
+    pub args: Option<Vec<String>>,
 }
 
+impl Dialog {
+    pub fn new(
+        extension_id: impl Into<String>,
+        extension_action: impl Into<String>,
+        fields: Vec<DialogField>,
+    ) -> Self {
+        return Self{
+    extension_id: extension_id.into(),
+            extension_action: extension_action.into(),
+            fields,
+            args: None
+        }
+    }
+
+    pub fn args(&mut self, args: Vec<String>)->Self{
+        self.args = Some(args);
+        return self.to_owned();
+    }
+}

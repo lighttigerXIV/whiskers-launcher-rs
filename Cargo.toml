@@ -1,9 +1,9 @@
 [package]
-name = "simple_kl_rs"
+name = "whiskers-launcher-rs"
 version = "0.0.0"
 edition = "2021"
-description = "A crate containing all necessary code related to Simple Keyboard Launcher"
-repository = "https://github.com/lighttigerXIV/simple-kl-rs"
+description = "A crate containing all necessary code related to Whiskers Launcher"
+repository = "https://github.com/lighttigerXIV/whiskers-launcher-rs"
 license = "MIT"
 keywords = ["productivity"]
 
@@ -12,6 +12,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.111"
 dirs = "5.0.1"
 notify-rust = "4.9.0"
+walkdir = "2.4.0"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 powershell_script = "1.1.0"

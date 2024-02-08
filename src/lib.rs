@@ -9,3 +9,4 @@ pub mod results;
 pub mod paths;
 pub mod utils;
 pub mod settings;
+pub mod indexing;

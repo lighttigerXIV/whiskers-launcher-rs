@@ -1,6 +1,6 @@
-use std::{env, fs, io};
-use serde::{Deserialize, Serialize};
 use crate::paths::{get_app_resources_icons_dir, get_autostart_path, get_settings_path};
+use serde::{Deserialize, Serialize};
+use std::{env, fs, io};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Settings {
@@ -42,22 +42,35 @@ pub struct Settings {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SearchEngine {
-    pub icon_path: String,
+    pub icon_path: Option<String>,
     pub tint_icon: bool,
     pub keyword: String,
     pub name: String,
     pub query: String,
+    pub default: bool,
 }
 
 impl SearchEngine {
-    pub fn new(icon_path: impl Into<String>, tint_icon: bool, keyword: impl Into<String>, name: impl Into<String>, query: impl Into<String>) -> Self {
+    pub fn new(
+        tint_icon: bool,
+        keyword: impl Into<String>,
+        name: impl Into<String>,
+        query: impl Into<String>,
+        default: bool,
+    ) -> Self {
         return Self {
-            icon_path: icon_path.into(),
+            icon_path: None,
             tint_icon,
             keyword: keyword.into(),
             name: name.into(),
             query: query.into(),
+            default,
         };
+    }
+
+    pub fn icon_path(&mut self, icon_path: impl Into<String>) -> Self {
+        self.icon_path = Some(icon_path.into());
+        self.to_owned()
     }
 }
 
@@ -100,6 +113,7 @@ impl Theme {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Extension {
     pub id: String,
+    pub keyword: String,
     pub settings: Vec<ExtensionSetting>,
 }
 
@@ -109,37 +123,74 @@ pub struct ExtensionSetting {
     pub value: String,
 }
 
+impl ExtensionSetting {
+    pub fn new(id: impl Into<String>, value: impl Into<String>) -> Self {
+        return Self {
+            id: id.into(),
+            value: value.into(),
+        };
+    }
+}
+
 // ==============================
 // Default Values
 // ==============================
 
-fn default_launch_first_key() -> String { return "ctrl".to_owned(); }
+fn default_launch_first_key() -> String {
+    return "ctrl".to_owned();
+}
 
-fn default_launch_second_key() -> Option<String> { return None; }
+fn default_launch_second_key() -> Option<String> {
+    return None;
+}
 
-fn default_launch_third_key() -> String { return "space".to_owned(); }
+fn default_launch_third_key() -> String {
+    return "space".to_owned();
+}
 
-fn default_auto_start() -> bool { return true; }
+fn default_auto_start() -> bool {
+    return true;
+}
 
-fn default_fractional_scaling() -> f32 { return 1.0; }
+fn default_fractional_scaling() -> f32 {
+    return 1.0;
+}
 
-fn default_show_search_icon() -> bool { return true; }
+fn default_show_search_icon() -> bool {
+    return true;
+}
 
-fn default_show_settings_icon() -> bool { return true; }
+fn default_show_settings_icon() -> bool {
+    return true;
+}
 
-fn default_show_placeholder() -> bool { return true; }
+fn default_show_placeholder() -> bool {
+    return true;
+}
 
-fn default_layout() -> String { return "modern".to_owned(); }
+fn default_layout() -> String {
+    return "modern".to_owned();
+}
 
-fn default_border_radius() -> u8 { return 24; }
+fn default_border_radius() -> u8 {
+    return 24;
+}
 
-fn default_border_width() -> u8 { return 2; }
+fn default_border_width() -> u8 {
+    return 2;
+}
 
-fn default_results_count() -> u8 { return 6; }
+fn default_results_count() -> u8 {
+    return 6;
+}
 
-fn default_density() -> String { return "normal".to_owned(); }
+fn default_density() -> String {
+    return "medium".to_owned();
+}
 
-fn default_blacklist() -> Vec<String> { return vec![]; }
+fn default_blacklist() -> Vec<String> {
+    return vec![];
+}
 
 fn default_search_engines() -> Vec<SearchEngine> {
     let mut google_icon = get_app_resources_icons_dir().unwrap();
@@ -152,43 +203,41 @@ fn default_search_engines() -> Vec<SearchEngine> {
 
     return vec![
         SearchEngine::new(
-            google_icon.into_os_string().into_string().unwrap(),
             true,
             "gs",
             "Google Search",
             "https://www.google.com/search?q=%s",
-        ),
+            true,
+        )
+        .icon_path(google_icon.into_os_string().into_string().unwrap()),
         SearchEngine::new(
-            duckduckgo_icon.into_os_string().into_string().unwrap(),
             true,
             "ds",
             "DuckDuckGo Search",
             "https://duckduckgo.com/?q=%s",
-        ),
+            false,
+        )
+        .icon_path(duckduckgo_icon.into_os_string().into_string().unwrap()),
         SearchEngine::new(
-            brave_icon.into_os_string().into_string().unwrap(),
             true,
             "bs",
             "Brave Search",
             "https://search.brave.com/search?q=%s",
-        ),
+            false,
+        )
+        .icon_path(brave_icon.into_os_string().into_string().unwrap()),
     ];
 }
 
 fn default_theme() -> Theme {
     return Theme::new(
-        "#221A00",
-        "#403200",
-        "#5B4700",
-        "#FFDB5D",
-        "#FF7373",
-        "#FFE792",
-        "#221A00",
-        "#221A00",
+        "#221A00", "#403200", "#5B4700", "#FFDB5D", "#FF7373", "#FFE792", "#221A00", "#221A00",
     );
 }
 
-fn default_extensions() -> Vec<Extension> { return vec![]; }
+fn default_extensions() -> Vec<Extension> {
+    return vec![];
+}
 
 pub fn get_default_settings() -> Settings {
     return Settings {
@@ -300,9 +349,41 @@ impl Settings {
         self.extensions = value;
         self.to_owned()
     }
+
+    pub fn update_extension_setting(
+        &mut self,
+        extension_id: String,
+        setting_id: String,
+        value: String,
+    ) -> Self {
+        let mut new_extensions: Vec<Extension> = vec![];
+
+        for extension in self.extensions.to_owned() {
+            if extension.id == extension_id {
+                let mut new_settings: Vec<ExtensionSetting> = vec![];
+
+                for setting in extension.settings {
+                    if setting.id == setting_id {
+                        new_settings.push(ExtensionSetting {
+                            id: setting.id,
+                            value: value.to_owned(),
+                        });
+                    } else {
+                        new_settings.push(setting);
+                    }
+                }
+            } else {
+                new_extensions.push(extension);
+            }
+        }
+
+        self.extensions = new_extensions;
+
+        return self.to_owned();
+    }
 }
 
-pub fn init_settings() -> io::Result<()> {
+pub fn index_settings() -> io::Result<()> {
     let settings_path = get_settings_path().ok_or(()).unwrap();
     let parent = settings_path.parent().ok_or(()).unwrap();
 
@@ -311,8 +392,12 @@ pub fn init_settings() -> io::Result<()> {
     }
 
     if !settings_path.exists() {
-        let json_settings = serde_json::to_string_pretty(&get_default_settings()).map_err(|_| ()).unwrap();
-        fs::write(&settings_path, &json_settings).map_err(|_| ()).unwrap();
+        let json_settings = serde_json::to_string_pretty(&get_default_settings())
+            .map_err(|_| ())
+            .unwrap();
+        fs::write(&settings_path, &json_settings)
+            .map_err(|_| ())
+            .unwrap();
     }
 
     Ok(())
@@ -324,24 +409,29 @@ pub fn get_settings() -> Option<Settings> {
 
     return match serde_json::from_str(&settings_content) {
         Ok(settings) => Some(settings),
-        Err(_) => Some(get_default_settings())
+        Err(_) => Some(get_default_settings()),
     };
 }
 
 pub fn update_settings(settings: Settings) -> io::Result<()> {
-
     //Updates Settings
     let original_settings = get_settings().ok_or(()).unwrap();
     let settings_path = get_settings_path().ok_or(()).unwrap();
-    let json_settings = serde_json::to_string_pretty(&settings).map_err(|_| ()).unwrap();
-    fs::write(&settings_path, &json_settings).map_err(|_| ()).unwrap();
+    let json_settings = serde_json::to_string_pretty(&settings)
+        .map_err(|_| ())
+        .unwrap();
+    fs::write(&settings_path, &json_settings)
+        .map_err(|_| ())
+        .unwrap();
 
     if original_settings.auto_start != settings.auto_start {
         let path = get_autostart_path().ok_or(()).unwrap();
         let settings = get_settings().ok_or(()).unwrap();
 
         if !path.exists() && settings.auto_start {
-            fs::create_dir_all(&path.parent().ok_or(()).unwrap()).map_err(|_| ()).unwrap();
+            fs::create_dir_all(&path.parent().ok_or(()).unwrap())
+                .map_err(|_| ())
+                .unwrap();
         }
 
         match env::consts::OS {
@@ -349,15 +439,17 @@ pub fn update_settings(settings: Settings) -> io::Result<()> {
                 let desktop_content = r#"[Desktop Entry]
 Version=0.1
 Type=Application
-Name=Simple KL Service
-Comment=Simple KL Service
-Exec=/usr/bin/simple-kl-service"#;
+Name=Whiskers Launcher Companion
+Comment=Whiskers Launcher companion tray app
+Exec=/usr/bin/whiskers-launcher"#;
 
                 let mut desktop_file_path = path.to_owned();
-                desktop_file_path.push("simple-kl-service.desktop");
+                desktop_file_path.push("whiskers-launcher.desktop");
 
                 if settings.auto_start {
-                    fs::write(&desktop_file_path, &desktop_content).map_err(|_| ()).unwrap();
+                    fs::write(&desktop_file_path, &desktop_content)
+                        .map_err(|_| ())
+                        .unwrap();
                 } else {
                     if desktop_file_path.exists() {
                         fs::remove_file(&desktop_file_path).map_err(|_| ()).unwrap();
@@ -366,14 +458,20 @@ Exec=/usr/bin/simple-kl-service"#;
             }
             #[cfg(target_os = "windows")]
             "windows" => {
-                let script = if auto_start { "enable-autostart.ps1" } else { "disable-autostart.ps1" };
+                let script = if auto_start {
+                    "enable-autostart.ps1"
+                } else {
+                    "disable-autostart.ps1"
+                };
 
                 let mut path = get_local_dir().unwrap();
                 path.push("resources\\ps-scripts");
                 path.push(script);
 
                 let script_content = fs::read_to_string(&path).map_err(|_| ()).unwrap();
-                powershell_script::run(&script_content).map_err(|_| ()).unwrap();
+                powershell_script::run(&script_content)
+                    .map_err(|_| ())
+                    .unwrap();
             }
             _ => {}
         }
@@ -381,6 +479,3 @@ Exec=/usr/bin/simple-kl-service"#;
 
     Ok(())
 }
-
-
-

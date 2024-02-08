@@ -1,9 +1,15 @@
-use std::{fs, io};
-use std::fs::read_to_string;
-use std::process::exit;
+use crate::paths::{
+    get_extension_context_path, get_extension_results_path, get_user_extensions_dir,
+};
+use crate::results::WhiskersResult;
 use serde::{Deserialize, Serialize};
-use crate::paths::{get_extension_context_path, get_extension_results_path};
-use crate::results::SimpleKLResult;
+use std::fs::read_to_string;
+use std::path::PathBuf;
+use std::process::exit;
+use std::{fs, io};
+use walkdir::WalkDir;
+
+use self::manifest::Manifest;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Context {
@@ -39,8 +45,11 @@ pub enum Action {
 }
 
 pub mod manifest {
+    use serde::{Deserialize, Serialize};
+
     /** A struct to deserialize the extension manifest
      */
+    #[derive(Serialize, Deserialize, Debug, Clone)]
     pub struct Manifest {
         pub id: String,
         pub name: String,
@@ -49,9 +58,10 @@ pub mod manifest {
         pub description: String,
         pub os: Vec<String>,
         pub keyword: String,
-        pub settings: Vec<Setting>,
+        pub settings: Option<Vec<Setting>>,
     }
 
+    #[derive(Serialize, Deserialize, Debug, Clone)]
     pub struct Setting {
         pub id: String,
         pub title: String,
@@ -60,14 +70,16 @@ pub mod manifest {
         pub default_value: String,
         pub os: Vec<String>,
         pub select_options: Option<Vec<SelectOption>>,
-        pub show_condition: Option<ShowCondition>,
+        pub show_conditions: Option<Vec<ShowCondition>>,
     }
 
+    #[derive(Serialize, Deserialize, Debug, Clone)]
     pub struct SelectOption {
         pub id: String,
         pub text: String,
     }
 
+    #[derive(Serialize, Deserialize, Debug, Clone)]
     pub struct ShowCondition {
         pub setting_id: String,
         pub setting_value: String,
@@ -77,6 +89,41 @@ pub mod manifest {
 // =====================================================
 // Functions
 // =====================================================
+
+pub fn get_extension_dir(extension_id: String) -> Option<PathBuf> {
+    let extensions_dir = get_user_extensions_dir()?;
+
+    for entry in WalkDir::new(&extensions_dir) {
+        let entry = entry.ok()?;
+
+        if entry.file_name() == "manifest.json" {
+            let manifest: Manifest =
+                serde_json::from_str(&fs::read_to_string(&entry.path()).ok()?).ok()?;
+            if manifest.id == extension_id {
+                return Some(entry.path().to_owned());
+            }
+        }
+    }
+
+    None
+}
+
+pub fn get_extension_manifest(extension_id: String) -> Option<Manifest> {
+    let extensions_dir = get_user_extensions_dir()?;
+
+    for entry in WalkDir::new(&extensions_dir) {
+        let entry = entry.ok()?;
+
+        if entry.file_name() == "manifest.json" {
+            let manifest: Manifest = serde_json::from_str(&fs::read_to_string(&entry.path()).ok()?).ok()?;
+            if manifest.id == extension_id {
+                return Some(manifest);
+            }
+        }
+    }
+
+    None
+}
 
 pub fn send_extension_context(context: Context) -> io::Result<()> {
     let file_path = get_extension_context_path().ok_or(()).unwrap();
@@ -94,7 +141,7 @@ pub fn get_extension_context() -> Option<Context> {
     return Some(deserialized_context);
 }
 
-pub fn send_extension_results(results: Vec<SimpleKLResult>) {
+pub fn send_extension_results(results: Vec<WhiskersResult>) {
     let file_path = get_extension_results_path().unwrap();
     let json_results = serde_json::to_string(&results).unwrap();
     fs::write(file_path, &json_results).unwrap();
@@ -102,7 +149,7 @@ pub fn send_extension_results(results: Vec<SimpleKLResult>) {
     exit(0);
 }
 
-pub fn get_extension_results() -> Option<Vec<SimpleKLResult>> {
+pub fn get_extension_results() -> Option<Vec<WhiskersResult>> {
     let file_path = get_extension_results_path()?;
     let file_content = read_to_string(&file_path).ok()?;
     let extension_results = serde_json::from_str(&file_content).ok()?;
