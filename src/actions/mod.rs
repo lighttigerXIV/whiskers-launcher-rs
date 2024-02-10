@@ -71,6 +71,8 @@ impl Extension {
 pub struct Dialog {
     pub extension_id: String,
     pub extension_action: String,
+    pub title: String,
+    pub primary_button_text: Option<String>,
     pub fields: Vec<DialogField>,
     pub args: Option<Vec<String>>,
 }
@@ -78,18 +80,26 @@ pub struct Dialog {
 impl Dialog {
     pub fn new(
         extension_id: impl Into<String>,
+        title: impl Into<String>,
         extension_action: impl Into<String>,
         fields: Vec<DialogField>,
     ) -> Self {
-        return Self{
-    extension_id: extension_id.into(),
+        return Self {
+            extension_id: extension_id.into(),
             extension_action: extension_action.into(),
+            title: title.into(),
+            primary_button_text: None,
             fields,
-            args: None
-        }
+            args: None,
+        };
     }
 
-    pub fn args(&mut self, args: Vec<String>)->Self{
+    pub fn primary_button_text(&mut self, primary_button_text: impl Into<String>) -> Self {
+        self.primary_button_text = Some(primary_button_text.into());
+        return self.to_owned();
+    }
+
+    pub fn args(&mut self, args: Vec<String>) -> Self {
         self.args = Some(args);
         return self.to_owned();
     }

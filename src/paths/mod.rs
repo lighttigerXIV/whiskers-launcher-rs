@@ -151,3 +151,10 @@ pub fn get_autostart_path() -> Option<PathBuf> {
         _ => None,
     };
 }
+
+pub fn get_extension_dialog_action_path()-> Option<PathBuf>{
+    let mut path = get_temp_dir()?;
+    path.push("extension_dialog_action.json");
+
+    return Some(path); 
+}
