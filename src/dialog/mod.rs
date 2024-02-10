@@ -159,8 +159,8 @@ impl TextArea {
         return self.to_owned();
     }
 
-    pub fn placeholder(&mut self, description: impl Into<String>) -> Self {
-        self.description = Some(description.into());
+    pub fn placeholder(&mut self, placeholder: impl Into<String>) -> Self {
+        self.placeholder = Some(placeholder.into());
         return self.to_owned();
     }
 
@@ -176,7 +176,6 @@ pub struct SelectFile {
     pub value: String,
     pub title: String,
     pub description: Option<String>,
-    pub multiple_files: bool,
     pub select_dir: bool,
     pub default_path: Option<String>,
     pub filters: Vec<FileFilter>,
@@ -184,13 +183,12 @@ pub struct SelectFile {
 }
 
 impl SelectFile {
-    pub fn new(id: impl Into<String>, value: impl Into<String>, title: impl Into<String>) -> Self {
+    pub fn new(id: impl Into<String>, title: impl Into<String>) -> Self {
         return Self {
             id: id.into(),
-            value: value.into(),
+            value: "".to_string(),
             title: title.into(),
             description: None,
-            multiple_files: false,
             select_dir: false,
             default_path: None,
             filters: vec![],
@@ -200,11 +198,6 @@ impl SelectFile {
 
     pub fn description(&mut self, description: impl Into<String>) -> Self {
         self.description = Some(description.into());
-        return self.to_owned();
-    }
-
-    pub fn multiple_files(&mut self, multiple_files: bool) -> Self {
-        self.multiple_files = multiple_files;
         return self.to_owned();
     }
 
@@ -236,10 +229,19 @@ pub struct FileFilter {
 }
 
 impl FileFilter {
-    pub fn new(name: impl Into<String>, file_extensions: Vec<String>) -> Self {
+    pub fn new(name: impl Into<String>) -> Self {
         return Self {
             name: name.into(),
-            file_extensions,
+            file_extensions: vec![],
         };
+    }
+
+    pub fn add_extension(&mut self, extension: impl Into<String>) -> Self {
+        let mut extensions = self.file_extensions.to_owned();
+        extensions.push(extension.into());
+
+        self.file_extensions = extensions;
+
+        return self.to_owned();
     }
 }
