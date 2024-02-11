@@ -266,7 +266,7 @@ pub fn get_extension_dialog_action() -> Option<actions::Dialog> {
     return Some(action);
 }
 
-pub fn send_extension_dialog_response(response: Vec<DialogResponse>) {
+pub fn send_extension_dialog_response(response: DialogResponse) {
     let path = get_extension_dialog_response_path().expect("Error getting response path");
 
     let response_json =
