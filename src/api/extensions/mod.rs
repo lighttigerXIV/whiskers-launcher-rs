@@ -266,11 +266,11 @@ pub fn get_extension_dialog_action() -> Option<actions::Dialog> {
     return Some(action);
 }
 
-pub fn send_extension_dialog_response(results: Vec<DialogResponse>) {
+pub fn send_extension_dialog_response(response: Vec<DialogResponse>) {
     let path = get_extension_dialog_response_path().expect("Error getting response path");
 
     let response_json =
-        serde_json::to_string(&results).expect("Error converting response to a json");
+        serde_json::to_string(&response).expect("Error converting response to a json");
 
     fs::write(&path, &response_json).expect("Error writing response");
 }
