@@ -37,8 +37,8 @@ impl Input {
         return self.to_owned();
     }
 
-    pub fn placeholder(&mut self, description: impl Into<String>) -> Self {
-        self.description = Some(description.into());
+    pub fn placeholder(&mut self, placeholder: impl Into<String>) -> Self {
+        self.placeholder = Some(placeholder.into());
         return self.to_owned();
     }
 
