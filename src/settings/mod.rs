@@ -285,6 +285,59 @@ impl Settings {
         self.to_owned()
     }
 
+    pub fn handle_autostart(self){
+        let path = get_autostart_path().ok_or(()).unwrap();
+        let settings = get_settings().ok_or(()).unwrap();
+
+        if !path.exists() && settings.auto_start {
+            fs::create_dir_all(&path.parent().ok_or(()).unwrap())
+                .map_err(|_| ())
+                .unwrap();
+        }
+
+        match env::consts::OS {
+            "linux" => {
+                let desktop_content = r#"[Desktop Entry]
+Version=0.1
+Type=Application
+Name=Whiskers Launcher Companion
+Comment=Whiskers Launcher companion tray app
+Exec=/usr/bin/whiskers-launcher"#;
+
+                let mut desktop_file_path = path.to_owned();
+                desktop_file_path.push("whiskers-launcher.desktop");
+
+                if self.auto_start {
+                    fs::write(&desktop_file_path, &desktop_content)
+                        .map_err(|_| ())
+                        .unwrap();
+                } else {
+                    if desktop_file_path.exists() {
+                        fs::remove_file(&desktop_file_path).map_err(|_| ()).unwrap();
+                    }
+                }
+            }
+            #[cfg(target_os = "windows")]
+            "windows" => {
+                let script = if self.auto_start {
+                    "enable-autostart.ps1"
+                } else {
+                    "disable-autostart.ps1"
+                };
+
+                let mut path = get_local_dir().unwrap();
+                path.push("resources\\ps-scripts");
+                path.push(script);
+
+                let script_content = fs::read_to_string(&path).map_err(|_| ()).unwrap();
+                powershell_script::run(&script_content)
+                    .map_err(|_| ())
+                    .unwrap();
+            }
+            _ => {}
+        }
+    }
+
     pub fn set_fraction_scaling(&mut self, value: f32) -> Self {
         self.fractional_scaling = value;
         self.to_owned()
@@ -400,6 +453,8 @@ pub fn index_settings() -> io::Result<()> {
             .unwrap();
     }
 
+    get_settings().ok_or(()).unwrap().handle_autostart();
+
     Ok(())
 }
 
@@ -424,58 +479,7 @@ pub fn update_settings(settings: Settings) -> io::Result<()> {
         .map_err(|_| ())
         .unwrap();
 
-    if original_settings.auto_start != settings.auto_start {
-        let path = get_autostart_path().ok_or(()).unwrap();
-        let settings = get_settings().ok_or(()).unwrap();
-
-        if !path.exists() && settings.auto_start {
-            fs::create_dir_all(&path.parent().ok_or(()).unwrap())
-                .map_err(|_| ())
-                .unwrap();
-        }
-
-        match env::consts::OS {
-            "linux" => {
-                let desktop_content = r#"[Desktop Entry]
-Version=0.1
-Type=Application
-Name=Whiskers Launcher Companion
-Comment=Whiskers Launcher companion tray app
-Exec=/usr/bin/whiskers-launcher"#;
-
-                let mut desktop_file_path = path.to_owned();
-                desktop_file_path.push("whiskers-launcher.desktop");
-
-                if settings.auto_start {
-                    fs::write(&desktop_file_path, &desktop_content)
-                        .map_err(|_| ())
-                        .unwrap();
-                } else {
-                    if desktop_file_path.exists() {
-                        fs::remove_file(&desktop_file_path).map_err(|_| ()).unwrap();
-                    }
-                }
-            }
-            #[cfg(target_os = "windows")]
-            "windows" => {
-                let script = if auto_start {
-                    "enable-autostart.ps1"
-                } else {
-                    "disable-autostart.ps1"
-                };
-
-                let mut path = get_local_dir().unwrap();
-                path.push("resources\\ps-scripts");
-                path.push(script);
-
-                let script_content = fs::read_to_string(&path).map_err(|_| ()).unwrap();
-                powershell_script::run(&script_content)
-                    .map_err(|_| ())
-                    .unwrap();
-            }
-            _ => {}
-        }
-    }
+    original_settings.handle_autostart();
 
     Ok(())
 }

@@ -1,15 +1,15 @@
 use crate::actions;
 use crate::paths::{
-    get_extension_context_path, get_extension_dialog_action_path, get_extension_results_path,
-    get_user_extensions_dir,
+    get_extension_context_path, get_extension_dialog_action_path,
+    get_extension_dialog_results_path, get_extension_results_path, get_user_extensions_dir,
 };
 use crate::results::WhiskersResult;
 use crate::settings::{get_settings, ExtensionSetting};
-use serde::{Deserialize, Serialize};
 use std::fs::read_to_string;
 use std::path::PathBuf;
 use std::process::exit;
 use std::{fs, io};
+use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
 
 use self::manifest::Manifest;
@@ -94,6 +94,7 @@ pub mod manifest {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct DialogResult {
     pub id: String,
     pub value: String,
@@ -105,6 +106,11 @@ impl DialogResult {
             id: id.into(),
             value: value.into(),
         };
+    }
+
+    /// Returns true if the value is "true". Any other case it will return a false
+    pub fn as_boolean(self) -> bool {
+        return self.value == "true";
     }
 }
 
@@ -230,4 +236,33 @@ pub fn get_extension_dialog_action() -> Option<actions::Dialog> {
     let action: actions::Dialog = serde_json::from_str(&action_json).expect("Error getting action");
 
     return Some(action);
+}
+
+pub fn send_extension_dialog_results(results: Vec<DialogResult>) {
+    let path = get_extension_dialog_results_path().expect("Error getting results path");
+
+    let results_json = serde_json::to_string(&results).expect("Error converting results to a json");
+
+    fs::write(&path, &results_json).expect("Error writing results");
+}
+
+pub fn get_extension_dialog_results() -> Option<Vec<DialogResult>> {
+    let path = get_extension_dialog_results_path().expect("Error getting results path");
+    let results_json = fs::read_to_string(&path).expect("Error getting results file content");
+    let results: Vec<DialogResult> =
+        serde_json::from_str(&results_json).expect("Error getting results");
+
+    return Some(results);
+}
+
+pub fn get_extension_dialog_result(id: impl Into<String>) -> Option<DialogResult> {
+    let id = id.into();
+
+    for result in get_extension_dialog_results()? {
+        if result.id == id {
+            return Some(result);
+        }
+    }
+
+    return None;
 }

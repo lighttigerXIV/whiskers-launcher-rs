@@ -48,9 +48,9 @@ pub fn get_user_extensions() -> Option<Vec<Manifest>> {
 
             if entry_name == "manifest.json" {
                 let content = fs::read_to_string(&entry.path()).ok()?;
-                let manifest: Manifest = serde_json::from_str(&content).ok()?;
-
-                extensions.push(manifest);
+                if let Ok(manifest) = serde_json::from_str(&content){
+                    extensions.push(manifest);
+                }
             }
         }
     }
