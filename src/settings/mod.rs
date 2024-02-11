@@ -302,7 +302,7 @@ Version=0.1
 Type=Application
 Name=Whiskers Launcher Companion
 Comment=Whiskers Launcher companion tray app
-Exec=/usr/bin/whiskers-launcher-companion"#;
+Exec=/usr/bin/whiskers-launcher-companion\"#;
 
                 let mut desktop_file_path = path.to_owned();
                 desktop_file_path.push("whiskers-launcher.desktop");

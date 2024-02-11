@@ -126,10 +126,10 @@ pub fn get_extension_dir(extension_id: impl Into<String>) -> Option<PathBuf> {
         let entry = entry.ok()?;
 
         if entry.file_name() == "manifest.json" {
-            let manifest: Manifest =
-                serde_json::from_str(&fs::read_to_string(&entry.path()).ok()?).ok()?;
-            if manifest.id == id {
-                return Some(entry.path().parent()?.to_owned());
+            if let Ok(manifest) = serde_json::from_str::<Manifest>(&fs::read_to_string(&entry.path()).ok()?){
+                if manifest.id == id {
+                    return Some(entry.path().parent()?.to_owned());
+                }
             }
         }
     }
@@ -145,10 +145,10 @@ pub fn get_extension_manifest(extension_id: impl Into<String>) -> Option<Manifes
         let entry = entry.ok()?;
 
         if entry.file_name() == "manifest.json" {
-            let manifest: Manifest =
-                serde_json::from_str(&fs::read_to_string(&entry.path()).ok()?).ok()?;
-            if manifest.id == id {
-                return Some(manifest);
+            if let Ok(manifest) = serde_json::from_str::<Manifest>(&fs::read_to_string(&entry.path()).ok()?){
+                if manifest.id == id {
+                    return Some(manifest);
+                }
             }
         }
     }

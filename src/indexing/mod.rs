@@ -32,7 +32,7 @@ impl AppIndex {
 pub fn get_indexed_apps() -> Option<Vec<AppIndex>> {
     let path = get_indexing_apps_path()?;
     let content = fs::read_to_string(&path).ok()?;
-    let apps: Vec<AppIndex> = serde_json::from_str(&content).ok()?;
+    let apps = serde_json::from_str::<Vec<AppIndex>>(&content).ok()?;
 
     return Some(apps);
 }
