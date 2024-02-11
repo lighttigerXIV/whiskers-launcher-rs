@@ -159,9 +159,9 @@ pub fn get_extension_dialog_action_path()-> Option<PathBuf>{
     return Some(path); 
 }
 
-pub fn get_extension_dialog_results_path()-> Option<PathBuf>{
+pub fn get_extension_dialog_response_path()-> Option<PathBuf>{
     let mut path = get_temp_dir()?;
-    path.push("extension_dialog_results.json");
+    path.push("extension_dialog_response.json");
 
     return Some(path); 
 }
