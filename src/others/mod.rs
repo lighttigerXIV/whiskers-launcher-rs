@@ -5,10 +5,14 @@ use notify_rust::Notification;
 ///
 /// ### Example
 /// ```notify("Add bookmark", "Bookmark added successfully");```
-pub fn notify(title: &str, message: &str) {
+pub fn send_notification(title: impl Into<String>, message: impl Into<String>) {
+
+    let title = title.into();
+    let message = message.into();
+
     Notification::new()
-        .summary(title)
-        .body(message)
+        .summary(&title)
+        .body(&message)
         .show()
         .expect("Error showing notification");
 }
