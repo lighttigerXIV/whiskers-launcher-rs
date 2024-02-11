@@ -105,10 +105,10 @@ impl DialogResponse {
         return Self { results, args };
     }
 
-    pub fn get_result_value(self, id: impl Into<String>) -> Option<String> {
+    pub fn get_result_value(&self, id: impl Into<String>) -> Option<String> {
         let id = id.into();
 
-        for result in self.results{
+        for result in self.results.to_owned(){
             if result.id == id {
                 return Some(result.value);
             }
