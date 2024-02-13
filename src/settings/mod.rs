@@ -302,7 +302,9 @@ Version=0.1
 Type=Application
 Name=Whiskers Launcher Companion
 Comment=Whiskers Launcher companion tray app
-Exec=/usr/bin/whiskers-launcher-companion\"#;
+Terminal=false
+StartupNotify=false
+Exec=sh -c '/usr/bin/whiskers-launcher-companion'"#;
 
                 let mut desktop_file_path = path.to_owned();
                 desktop_file_path.push("whiskers-launcher.desktop");
@@ -470,7 +472,6 @@ pub fn get_settings() -> Option<Settings> {
 
 pub fn update_settings(settings: Settings) -> io::Result<()> {
     //Updates Settings
-    let original_settings = get_settings().ok_or(()).unwrap();
     let settings_path = get_settings_path().ok_or(()).unwrap();
     let json_settings = serde_json::to_string_pretty(&settings)
         .map_err(|_| ())
@@ -479,7 +480,7 @@ pub fn update_settings(settings: Settings) -> io::Result<()> {
         .map_err(|_| ())
         .unwrap();
 
-    original_settings.handle_autostart();
+    settings.handle_autostart();
 
     Ok(())
 }
