@@ -165,3 +165,21 @@ pub fn get_extension_dialog_response_path()-> Option<PathBuf>{
 
     return Some(path); 
 }
+
+pub fn get_store_cache_dir() -> Option<PathBuf>{
+    let mut path = get_local_dir()?;
+    path.push("StoreCache");
+    Some(path)
+}
+
+pub fn get_cached_themes_store_path() -> Option<PathBuf>{
+    let mut path = get_store_cache_dir()?;
+    path.push("themes.json");
+    Some(path)
+}
+
+pub fn get_cached_extensions_store_path() -> Option<PathBuf>{
+    let mut path = get_store_cache_dir()?;
+    path.push("extensions.json");
+    Some(path)
+}
