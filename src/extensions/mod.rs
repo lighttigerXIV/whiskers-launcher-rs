@@ -2,7 +2,7 @@ use std::{fs, io, vec};
 
 use crate::{
     indexing,
-    paths::{get_indexing_extensions_path, get_user_extensions_dir},
+    paths::{get_indexing_dir, get_indexing_extensions_path, get_user_extensions_dir},
     settings::{self, update_settings, Extension, ExtensionSetting},
 };
 
@@ -16,6 +16,11 @@ pub fn index_extensions() -> io::Result<()> {
     let extensions = indexing::get_user_extensions().ok_or(()).unwrap();
     let extensions_json = serde_json::to_string(&extensions).map_err(|_| ()).unwrap();
     let extensions_indexing_path = get_indexing_extensions_path().ok_or(()).unwrap();
+    let indexing_dir = get_indexing_dir().ok_or(()).unwrap();
+    
+    if !indexing_dir.exists(){
+        fs::create_dir_all(&indexing_dir).map_err(|_|()).unwrap();
+    }
 
     fs::write(&extensions_indexing_path, &extensions_json)
         .map_err(|_| ())
