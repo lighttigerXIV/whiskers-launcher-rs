@@ -12,6 +12,8 @@ pub struct Settings {
     pub launch_third_key: String,
     #[serde(default = "default_auto_start")]
     pub auto_start: bool,
+    #[serde(default = "default_hide_on_blur")]
+    pub hide_on_blur: bool,
     #[serde(default = "default_fractional_scaling")]
     pub fractional_scaling: f32,
     #[serde(default = "default_show_search_icon")]
@@ -97,7 +99,7 @@ impl Theme {
         text_on_primary: impl Into<String>,
         text_on_danger: impl Into<String>,
     ) -> Self {
-        return Self {
+        Self {
             background_main: background_main.into(),
             background_secondary: background_secondary.into(),
             background_tertiary: background_tertiary.into(),
@@ -106,7 +108,7 @@ impl Theme {
             text_on_background: text_on_background.into(),
             text_on_primary: text_on_primary.into(),
             text_on_danger: text_on_danger.into(),
-        };
+        }
     }
 }
 
@@ -125,10 +127,10 @@ pub struct ExtensionSetting {
 
 impl ExtensionSetting {
     pub fn new(id: impl Into<String>, value: impl Into<String>) -> Self {
-        return Self {
+        Self {
             id: id.into(),
             value: value.into(),
-        };
+        }
     }
 }
 
@@ -137,59 +139,63 @@ impl ExtensionSetting {
 // ==============================
 
 fn default_launch_first_key() -> String {
-    return "ctrl".to_owned();
+    "ctrl".to_owned()
 }
 
 fn default_launch_second_key() -> Option<String> {
-    return None;
+    None
 }
 
 fn default_launch_third_key() -> String {
-    return "space".to_owned();
+    "space".to_owned()
 }
 
 fn default_auto_start() -> bool {
-    return true;
+    true
+}
+
+fn default_hide_on_blur() -> bool {
+    true
 }
 
 fn default_fractional_scaling() -> f32 {
-    return 1.0;
+    1.0
 }
 
 fn default_show_search_icon() -> bool {
-    return true;
+    true
 }
 
 fn default_show_settings_icon() -> bool {
-    return true;
+    true
 }
 
 fn default_show_placeholder() -> bool {
-    return true;
+    true
 }
 
 fn default_layout() -> String {
-    return "modern".to_owned();
+    "modern".to_owned()
 }
 
 fn default_border_radius() -> u8 {
-    return 24;
+    24
 }
 
 fn default_border_width() -> u8 {
-    return 2;
+    2
 }
 
 fn default_results_count() -> u8 {
-    return 6;
+    6
 }
 
 fn default_density() -> String {
-    return "medium".to_owned();
+    "medium".to_owned()
 }
 
 fn default_blacklist() -> Vec<String> {
-    return vec![];
+    vec![]
 }
 
 fn default_search_engines() -> Vec<SearchEngine> {
@@ -201,7 +207,7 @@ fn default_search_engines() -> Vec<SearchEngine> {
     duckduckgo_icon.push("duckduckgo.svg");
     brave_icon.push("brave.svg");
 
-    return vec![
+    vec![
         SearchEngine::new(
             true,
             "gs",
@@ -226,24 +232,25 @@ fn default_search_engines() -> Vec<SearchEngine> {
             false,
         )
         .icon_path(brave_icon.into_os_string().into_string().unwrap()),
-    ];
+    ]
 }
 
 fn default_theme() -> Theme {
-    return Theme::new(
+    Theme::new(
         "#221A00", "#403200", "#5B4700", "#FFDB5D", "#FF7373", "#FFE792", "#221A00", "#221A00",
-    );
+    )
 }
 
 fn default_extensions() -> Vec<Extension> {
-    return vec![];
+    vec![]
 }
 
 pub fn get_default_settings() -> Settings {
-    return Settings {
+    Settings {
         launch_first_key: default_launch_first_key(),
         launch_second_key: default_launch_second_key(),
         launch_third_key: default_launch_third_key(),
+        hide_on_blur: default_hide_on_blur(),
         auto_start: default_auto_start(),
         fractional_scaling: default_fractional_scaling(),
         show_search_icon: default_show_search_icon(),
@@ -258,7 +265,7 @@ pub fn get_default_settings() -> Settings {
         search_engines: default_search_engines(),
         theme: default_theme(),
         extensions: default_extensions(),
-    };
+    }
 }
 
 // ================================
@@ -285,7 +292,12 @@ impl Settings {
         self.to_owned()
     }
 
-    pub fn handle_autostart(self){
+    pub fn set_hide_on_blur(&mut self, value: bool) -> Self{
+        self.hide_on_blur = value;
+        self.to_owned()
+    }
+
+    pub fn handle_autostart(self) {
         let path = get_autostart_path().ok_or(()).unwrap();
         let settings = get_settings().ok_or(()).unwrap();
 
