@@ -1,4 +1,4 @@
-use crate::paths::{get_app_resources_icons_dir, get_autostart_path, get_settings_path};
+use crate::paths::{get_app_resources_icons_dir, get_autostart_path, get_local_dir, get_settings_path};
 use serde::{Deserialize, Serialize};
 use std::{env, fs, io};
 
