@@ -52,7 +52,7 @@ pub fn index_extensions() -> io::Result<()> {
 
                 new_extensions.push(Extension {
                     id: extension.id,
-                    keyword: extension.keyword,
+                    keyword: settings.extensions[index].to_owned().keyword,
                     settings: new_extension_settings,
                 });
             } else {

@@ -189,7 +189,7 @@ pub fn send_extension_context(context: Context) -> io::Result<()> {
     let json_context = serde_json::to_string(&context).map_err(|_| ()).unwrap();
     fs::write(file_path, &json_context).map_err(|_| ()).unwrap();
 
-    return Ok(());
+    Ok(())
 }
 
 pub fn get_extension_context() -> Option<Context> {
@@ -197,7 +197,7 @@ pub fn get_extension_context() -> Option<Context> {
     let file_content = read_to_string(&file_path).ok()?;
     let deserialized_context: Context = serde_json::from_str(&file_content).ok()?;
 
-    return Some(deserialized_context);
+    Some(deserialized_context)
 }
 
 pub fn send_extension_results(results: Vec<WhiskersResult>) {
@@ -226,7 +226,7 @@ pub fn get_extension_settings(extension_id: impl Into<String>) -> Option<Vec<Ext
         }
     }
 
-    return None;
+    None
 }
 
 pub fn get_extension_setting(
@@ -247,7 +247,7 @@ pub fn get_extension_setting(
         }
     }
 
-    return None;
+    None
 }
 
 pub fn send_extension_dialog_action(action: actions::Dialog) {

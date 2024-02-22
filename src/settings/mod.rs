@@ -1,4 +1,4 @@
-use crate::paths::{get_app_resources_icons_dir, get_autostart_path, get_local_dir, get_settings_path};
+use crate::paths::{get_app_resources_dir, get_app_resources_icons_dir, get_autostart_path, get_settings_path};
 use serde::{Deserialize, Serialize};
 use std::{env, fs, io};
 
@@ -339,8 +339,8 @@ Exec=sh -c '/usr/bin/whiskers-launcher-companion'"#;
                     "disable-autostart.ps1"
                 };
 
-                let mut path = get_local_dir().unwrap();
-                path.push("resources\\ps-scripts");
+                let mut path = get_app_resources_dir().unwrap();
+                path.push("Scripts");
                 path.push(script);
 
                 let script_content = fs::read_to_string(&path).map_err(|_| ()).unwrap();
