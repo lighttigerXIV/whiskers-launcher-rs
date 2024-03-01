@@ -1,6 +1,10 @@
-use crate::paths::{get_app_resources_dir, get_app_resources_icons_dir, get_autostart_path, get_settings_path};
+use crate::paths::{get_app_resources_icons_dir, get_autostart_path, get_settings_path};
+
+#[cfg(target_os = "windows")]
+use crate::paths::get_app_resources_dir;
+
 use serde::{Deserialize, Serialize};
-use std::{env, fs, io};
+use std::{env, fs, io, os::unix::fs::PermissionsExt};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Settings {
@@ -292,7 +296,7 @@ impl Settings {
         self.to_owned()
     }
 
-    pub fn set_hide_on_blur(&mut self, value: bool) -> Self{
+    pub fn set_hide_on_blur(&mut self, value: bool) -> Self {
         self.hide_on_blur = value;
         self.to_owned()
     }
@@ -323,6 +327,11 @@ Exec=sh -c '/usr/bin/whiskers-launcher-companion'"#;
 
                 if self.auto_start {
                     fs::write(&desktop_file_path, &desktop_content)
+                        .map_err(|_| ())
+                        .unwrap();
+
+                    // Gives read and write permissions so that it can be executed on autostart
+                    fs::set_permissions(&desktop_file_path, fs::Permissions::from_mode(0o755))
                         .map_err(|_| ())
                         .unwrap();
                 } else {
