@@ -3,8 +3,12 @@ use crate::paths::{get_app_resources_icons_dir, get_autostart_path, get_settings
 #[cfg(target_os = "windows")]
 use crate::paths::get_app_resources_dir;
 
+#[cfg(target_os="linux")]
+use std::os::unix::fs::PermissionsExt;
+
 use serde::{Deserialize, Serialize};
-use std::{env, fs, io, os::unix::fs::PermissionsExt};
+use std::{env, fs, io};
+
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Settings {
@@ -312,6 +316,7 @@ impl Settings {
         }
 
         match env::consts::OS {
+            #[cfg(target_os="linux")]
             "linux" => {
                 let desktop_content = r#"[Desktop Entry]
 Version=0.1
