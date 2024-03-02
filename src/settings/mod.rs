@@ -319,13 +319,12 @@ impl Settings {
             #[cfg(target_os="linux")]
             "linux" => {
                 let desktop_content = r#"[Desktop Entry]
-Version=0.1
 Type=Application
 Name=Whiskers Launcher Companion
 Comment=Whiskers Launcher companion tray app
 Terminal=false
 StartupNotify=false
-Exec=sh -c '/usr/bin/whiskers-launcher-companion'"#;
+Exec=whiskers-launcher-companion"#;
 
                 let mut desktop_file_path = path.to_owned();
                 desktop_file_path.push("whiskers-launcher.desktop");
