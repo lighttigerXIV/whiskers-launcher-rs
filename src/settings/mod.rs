@@ -324,6 +324,7 @@ Name=Whiskers Launcher Companion
 Comment=Whiskers Launcher companion tray app
 Terminal=false
 StartupNotify=false
+Icon=/usr/share/pixmaps/whiskers-launcher.png
 Exec=whiskers-launcher-companion"#;
 
                 let mut desktop_file_path = path.to_owned();
