@@ -1,6 +1,6 @@
 [package]
 name = "whiskers-launcher-rs"
-version = "0.0.0"
+version = "1.0.0"
 edition = "2021"
 description = "A crate containing all necessary code related to Whiskers Launcher"
 repository = "https://github.com/lighttigerXIV/whiskers-launcher-rs"
