@@ -1,3 +1,4 @@
+#[derive(Debug, Clone)]
 pub struct Search {
     pub keyword: Option<String>,
     pub search_text: String,
