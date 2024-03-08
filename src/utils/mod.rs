@@ -21,6 +21,10 @@ pub fn get_search(text: impl Into<String>) -> Search {
         }
     }
 
+    if !has_keyword {
+        search_text = keyword.to_owned();
+    }
+
     search_text = search_text.trim().to_string();
 
     Search {
