@@ -3,12 +3,11 @@ use crate::paths::{get_app_resources_icons_dir, get_autostart_path, get_settings
 #[cfg(target_os = "windows")]
 use crate::paths::get_app_resources_dir;
 
-#[cfg(target_os="linux")]
+#[cfg(target_os = "linux")]
 use std::os::unix::fs::PermissionsExt;
 
 use serde::{Deserialize, Serialize};
 use std::{env, fs, io};
-
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Settings {
@@ -38,6 +37,8 @@ pub struct Settings {
     pub border_width: u8,
     #[serde(default = "default_results_count")]
     pub results_count: u8,
+    #[serde(default = "default_show_alt_hint")]
+    pub show_alt_hint: bool,
     #[serde(default = "default_density")]
     pub density: String,
     #[serde(default = "default_blacklist")]
@@ -198,6 +199,10 @@ fn default_results_count() -> u8 {
     6
 }
 
+fn default_show_alt_hint() -> bool {
+    true
+}
+
 fn default_density() -> String {
     "medium".to_owned()
 }
@@ -268,6 +273,7 @@ pub fn get_default_settings() -> Settings {
         border_radius: default_border_radius(),
         border_width: default_border_width(),
         results_count: default_results_count(),
+        show_alt_hint: default_show_alt_hint(),
         density: default_density(),
         blacklist: default_blacklist(),
         search_engines: default_search_engines(),
@@ -316,7 +322,7 @@ impl Settings {
         }
 
         match env::consts::OS {
-            #[cfg(target_os="linux")]
+            #[cfg(target_os = "linux")]
             "linux" => {
                 let desktop_content = r#"[Desktop Entry]
 Type=Application
