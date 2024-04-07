@@ -183,3 +183,9 @@ pub fn get_cached_extensions_store_path() -> Option<PathBuf> {
     path.push("extensions.json");
     Some(path)
 }
+
+pub fn get_recent_apps_path() -> Option<PathBuf>{
+    let mut path = get_local_dir()?;
+    path.push("recent-apps.json");
+    Some(path)
+}
