@@ -19,6 +19,8 @@ pub struct Settings {
     pub launch_third_key: String,
     #[serde(default = "default_auto_start")]
     pub auto_start: bool,
+    #[serde(default = "default_show_recent_apps")]
+    pub show_recent_apps: bool,
     #[serde(default = "default_hide_on_blur")]
     pub hide_on_blur: bool,
     #[serde(default = "default_fractional_scaling")]
@@ -163,6 +165,10 @@ fn default_auto_start() -> bool {
     true
 }
 
+fn default_show_recent_apps() -> bool{
+    true
+}
+
 fn default_hide_on_blur() -> bool {
     true
 }
@@ -265,6 +271,7 @@ pub fn get_default_settings() -> Settings {
         launch_third_key: default_launch_third_key(),
         hide_on_blur: default_hide_on_blur(),
         auto_start: default_auto_start(),
+        show_recent_apps: default_show_recent_apps(),
         fractional_scaling: default_fractional_scaling(),
         show_search_icon: default_show_search_icon(),
         show_settings_icon: default_show_settings_icon(),
