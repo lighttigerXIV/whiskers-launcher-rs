@@ -262,7 +262,7 @@ fn default_search_engines() -> Vec<SearchEngine> {
 
 fn default_theme() -> Theme {
     Theme::new(
-        "#221A00", "#403200", "#5B4700", "#FFDB5D", "#FF7373", "#FFE792", "#221A00", "#221A00",
+        "#0e0600", "#1b0b00", "#301300", "#ffe072", "#ff8c7c", "#ffeee2", "#000000", "#000000",
     )
 }
 
