@@ -55,6 +55,7 @@ pub struct Settings {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SearchEngine {
+    pub id: usize,
     pub icon_path: Option<String>,
     pub tint_icon: bool,
     pub keyword: String,
@@ -65,6 +66,7 @@ pub struct SearchEngine {
 
 impl SearchEngine {
     pub fn new(
+        id: usize,
         tint_icon: bool,
         keyword: impl Into<String>,
         name: impl Into<String>,
@@ -72,6 +74,7 @@ impl SearchEngine {
         default: bool,
     ) -> Self {
         return Self {
+            id,
             icon_path: None,
             tint_icon,
             keyword: keyword.into(),
@@ -228,6 +231,7 @@ fn default_search_engines() -> Vec<SearchEngine> {
 
     vec![
         SearchEngine::new(
+            0,
             true,
             "gs",
             "Google Search",
@@ -236,6 +240,7 @@ fn default_search_engines() -> Vec<SearchEngine> {
         )
         .icon_path(google_icon.into_os_string().into_string().unwrap()),
         SearchEngine::new(
+            1,
             true,
             "ds",
             "DuckDuckGo Search",
@@ -244,6 +249,7 @@ fn default_search_engines() -> Vec<SearchEngine> {
         )
         .icon_path(duckduckgo_icon.into_os_string().into_string().unwrap()),
         SearchEngine::new(
+            2,
             true,
             "bs",
             "Brave Search",
