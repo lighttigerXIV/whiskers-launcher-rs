@@ -1,3 +1,5 @@
+use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
+
 #[derive(Debug, Clone)]
 pub struct Search {
     pub keyword: Option<String>,
@@ -34,4 +36,10 @@ pub fn get_search(text: impl Into<String>) -> Search {
         },
         search_text,
     }
+}
+
+pub fn fuzzy_matches(original_text: impl Into<String>, search_text: impl Into<String>) -> bool {
+    SkimMatcherV2::default()
+        .fuzzy_match(&original_text.into(), &search_text.into())
+        .is_some()
 }

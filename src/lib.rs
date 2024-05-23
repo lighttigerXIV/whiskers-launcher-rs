@@ -8,3 +8,4 @@ pub mod api;
 pub mod indexing;
 pub mod result;
 pub mod action;
+pub mod extension;
