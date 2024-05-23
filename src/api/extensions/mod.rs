@@ -94,6 +94,19 @@ pub fn index_extensions() {
                 if let Ok(extension) = serde_json::from_str::<Extension>(&json) {
                     extensions.push(extension.to_owned());
 
+                    let has_keyword = settings
+                        .extensions
+                        .iter()
+                        .any(|es| es.extension_id == extension.id && es.setting_id == "keyword");
+
+                    if !has_keyword {
+                        settings.extensions.push(ExtensionSetting {
+                            extension_id: extension.id.to_owned(),
+                            setting_id: String::from("keyword"),
+                            setting_value: extension.keyword.to_owned(),
+                        })
+                    }
+
                     if let Some(extension_settings) = extension.settings {
                         for extension_setting in extension_settings {
                             let has_setting = settings.extensions.iter().any(|es| {
@@ -106,18 +119,6 @@ pub fn index_extensions() {
                                     extension_id: extension.id.to_owned(),
                                     setting_id: extension_setting.id.to_owned(),
                                     setting_value: extension_setting.default_value.to_owned(),
-                                })
-                            }
-
-                            let has_keyword = settings.extensions.iter().any(|es| {
-                                es.extension_id == extension.id && es.setting_id == "keyword"
-                            });
-
-                            if !has_keyword {
-                                settings.extensions.push(ExtensionSetting {
-                                    extension_id: extension.id.to_owned(),
-                                    setting_id: String::from("keyword"),
-                                    setting_value: extension.keyword.to_owned(),
                                 })
                             }
                         }
@@ -183,6 +184,7 @@ pub fn get_extension_dir(extension_id: impl Into<String>) -> Option<PathBuf> {
             if name == "manifest.json" {
                 let json =
                     fs::read_to_string(entry.path()).expect("Error getting manifest content");
+
                 if let Ok(extension) = serde_json::from_str::<Extension>(&json) {
                     if extension_id == extension.id {
                         return Some(entry.path().parent().unwrap().to_owned());
