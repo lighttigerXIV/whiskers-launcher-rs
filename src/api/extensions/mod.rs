@@ -3,10 +3,11 @@ use std::{fs, path::PathBuf, process::exit};
 use walkdir::WalkDir;
 
 use crate::{
+    action::DialogAction,
     extension::Extension,
     paths::{
-        get_extension_request_path, get_extension_response_path, get_extensions_dir,
-        get_indexing_extensions_path,
+        get_dialog_request_path, get_extension_request_path, get_extension_response_path,
+        get_extensions_dir, get_indexing_extensions_path,
     },
     result::WLResult,
     settings::ExtensionSetting,
@@ -59,12 +60,48 @@ impl ExtensionRequest {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ExtensionResponse {
     pub results: Vec<WLResult>,
+    pub args: Option<Vec<String>>,
 }
 
 impl ExtensionResponse {
     pub fn new(results: Vec<WLResult>) -> Self {
-        Self { results }
+        Self {
+            results,
+            args: None,
+        }
     }
+
+    pub fn args(&mut self, args: Vec<String>) -> Self {
+        self.args = Some(args.into());
+        self.to_owned()
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct DialogResponse {
+    pub results: Vec<DialogResult>,
+    pub args: Option<Vec<String>>,
+}
+
+impl DialogResponse {
+    pub fn get_result_value(self, field_id: impl Into<String>) -> Option<String> {
+        let field_id = field_id.into();
+
+        for result in self.results {
+            if result.field_id == field_id {
+                return Some(result.field_value);
+            }
+        }
+
+        None
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct DialogResult {
+    pub field_id: String,
+    pub field_value: String,
+    pub args: Option<Vec<String>>,
 }
 
 pub fn index_extensions() {
@@ -145,8 +182,8 @@ pub fn get_extensions() -> Vec<Extension> {
 }
 
 pub fn write_extension_request(request: ExtensionRequest) {
-    let bytes = bincode::serialize(&request).expect("Error serializing context");
-    fs::write(&get_extension_request_path(), &bytes).expect("Error writing context");
+    let bytes = bincode::serialize(&request).expect("Error serializing request");
+    fs::write(&get_extension_request_path(), &bytes).expect("Error writing request");
 }
 
 pub fn get_extension_request() -> ExtensionRequest {
@@ -163,6 +200,28 @@ pub fn write_extension_response(response: ExtensionResponse) {
 pub fn get_extension_response() -> ExtensionResponse {
     let bytes = fs::read(get_extension_response_path()).expect("Error reading extension response");
     let response = bincode::deserialize(&bytes).expect("Error deserializing extension response");
+    response
+}
+
+pub fn write_dialog_request(request: DialogAction) {
+    let bytes = bincode::serialize(&request).expect("Error serializing request");
+    fs::write(&get_dialog_request_path(), &bytes).expect("Error writing request");
+}
+
+pub fn get_dialog_request() -> DialogAction {
+    let bytes = fs::read(get_dialog_request_path()).expect("Error reading dialog request");
+    let request = bincode::deserialize(&bytes).expect("Error deserializing dialog request");
+    request
+}
+
+pub fn write_dialog_response(response: DialogResponse) {
+    let bytes = bincode::serialize(&response).expect("Error serializing response");
+    fs::write(get_extension_response_path(), &bytes).expect("Error writing response");
+}
+
+pub fn get_dialog_response() -> DialogResponse {
+    let bytes = fs::read(get_extension_response_path()).expect("Error reading dialog response");
+    let response = bincode::deserialize(&bytes).expect("Error deserializing dialog response");
     response
 }
 

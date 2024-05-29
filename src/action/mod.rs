@@ -185,7 +185,7 @@ impl DialogAction {
             action: action.into(),
             title: title.into(),
             action_text: action_text.into(),
-            fields: fields,
+            fields,
             args: None,
         }
     }
@@ -198,6 +198,7 @@ impl DialogAction {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Field {
+    pub id: String,
     pub field_type: FieldType,
     pub input_field: Option<InputField>,
     pub text_area_field: Option<TextAreaField>,
@@ -208,8 +209,9 @@ pub struct Field {
 }
 
 impl Field {
-    pub fn new_input(field: InputField) -> Self {
+    pub fn new_input(id: impl Into<String>, field: InputField) -> Self {
         Self {
+            id: id.into(),
             field_type: FieldType::Input,
             input_field: Some(field),
             text_area_field: None,
@@ -220,8 +222,9 @@ impl Field {
         }
     }
 
-    pub fn new_text_area(field: TextAreaField) -> Self {
+    pub fn new_text_area(id: impl Into<String>, field: TextAreaField) -> Self {
         Self {
+            id: id.into(),
             field_type: FieldType::TextArea,
             input_field: None,
             text_area_field: Some(field),
@@ -232,8 +235,9 @@ impl Field {
         }
     }
 
-    pub fn new_toggle(field: ToggleField) -> Self {
+    pub fn new_toggle(id: impl Into<String>, field: ToggleField) -> Self {
         Self {
+            id: id.into(),
             field_type: FieldType::Toggle,
             input_field: None,
             text_area_field: None,
@@ -244,8 +248,9 @@ impl Field {
         }
     }
 
-    pub fn new_select(field: SelectField) -> Self {
+    pub fn new_select(id: impl Into<String>,field: SelectField) -> Self {
         Self {
+            id: id.into(),
             field_type: FieldType::Select,
             input_field: None,
             text_area_field: None,
@@ -256,9 +261,10 @@ impl Field {
         }
     }
 
-    pub fn new_file_picker(field: FilePickerField) -> Self {
+    pub fn new_file_picker(id: impl Into<String>,field: FilePickerField) -> Self {
         Self {
-            field_type: FieldType::Input,
+            id: id.into(),
+            field_type: FieldType::FilePicker,
             input_field: None,
             text_area_field: None,
             toggle_field: None,
@@ -285,7 +291,6 @@ pub enum FieldType {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct InputField {
-    pub id: String,
     pub default_value: String,
     pub title: String,
     pub description: String,
@@ -294,13 +299,11 @@ pub struct InputField {
 
 impl InputField {
     pub fn new(
-        id: impl Into<String>,
         default_value: impl Into<String>,
         title: impl Into<String>,
         description: impl Into<String>,
     ) -> Self {
         Self {
-            id: id.into(),
             default_value: default_value.into(),
             title: title.into(),
             description: description.into(),
@@ -316,7 +319,6 @@ impl InputField {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TextAreaField {
-    pub id: String,
     pub default_value: String,
     pub title: String,
     pub description: String,
@@ -325,13 +327,11 @@ pub struct TextAreaField {
 
 impl TextAreaField {
     pub fn new(
-        id: impl Into<String>,
         default_value: impl Into<String>,
         title: impl Into<String>,
         description: impl Into<String>,
     ) -> Self {
         Self {
-            id: id.into(),
             default_value: default_value.into(),
             title: title.into(),
             description: description.into(),
@@ -347,7 +347,6 @@ impl TextAreaField {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ToggleField {
-    pub id: String,
     pub default_value: bool,
     pub title: String,
     pub description: String,
@@ -355,13 +354,11 @@ pub struct ToggleField {
 
 impl ToggleField {
     pub fn new(
-        id: impl Into<String>,
         default_value: bool,
         title: impl Into<String>,
         description: impl Into<String>,
     ) -> Self {
         Self {
-            id: id.into(),
             default_value: default_value.into(),
             title: title.into(),
             description: description.into(),
@@ -371,7 +368,6 @@ impl ToggleField {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SelectField {
-    pub id: String,
     pub default_value: String,
     pub title: String,
     pub description: String,
@@ -380,14 +376,12 @@ pub struct SelectField {
 
 impl SelectField {
     pub fn new(
-        id: impl Into<String>,
         default_value: impl Into<String>,
         title: impl Into<String>,
         description: impl Into<String>,
         options: Vec<SelectOption>,
     ) -> Self {
         Self {
-            id: id.into(),
             default_value: default_value.into(),
             title: title.into(),
             description: description.into(),
@@ -413,7 +407,6 @@ impl SelectOption {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FilePickerField {
-    pub id: String,
     pub title: String,
     pub description: String,
     pub default_path: Option<String>,
@@ -422,13 +415,8 @@ pub struct FilePickerField {
 }
 
 impl FilePickerField {
-    pub fn new(
-        id: impl Into<String>,
-        title: impl Into<String>,
-        description: impl Into<String>,
-    ) -> Self {
+    pub fn new(title: impl Into<String>, description: impl Into<String>) -> Self {
         Self {
-            id: id.into(),
             title: title.into(),
             description: description.into(),
             default_path: None,

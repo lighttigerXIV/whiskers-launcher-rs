@@ -1,4 +1,7 @@
+use std::{env, process::Command};
+
 use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
+use notify_rust::Notification;
 
 #[derive(Debug, Clone)]
 pub struct Search {
@@ -43,3 +46,34 @@ pub fn fuzzy_matches(original_text: impl Into<String>, search_text: impl Into<St
         .fuzzy_match(&original_text.into(), &search_text.into())
         .is_some()
 }
+
+pub fn send_notification(title: impl Into<String>, message: impl Into<String>) {
+    let title = title.into();
+    let message = message.into();
+
+    if on_linux() {
+        Command::new("sh")
+            .arg("-c")
+            .arg(format!("notify-send {} {}", title, message))
+            .spawn()
+            .expect("Error sending notification");
+    } else {
+        Notification::new()
+            .summary(&title)
+            .body(&message)
+            .show()
+            .expect("Error showing notification")
+            .icon("/usr/share/pixmaps/whiskers-launcher.png");
+    }
+}
+
+pub fn on_linux() -> bool {
+    env::consts::OS == "linux"
+}
+
+pub fn on_windows() -> bool {
+    env::consts::OS == "windows"
+}
+
+pub const FLAG_NO_WINDOW: u32 = 0x08000000;
+pub const FLAG_DETACHED_PROCESS: u32 = 0x00000008;
