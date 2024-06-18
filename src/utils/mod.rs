@@ -58,12 +58,25 @@ pub fn send_notification(title: impl Into<String>, message: impl Into<String>) {
             .spawn()
             .expect("Error sending notification");
     } else {
-        Notification::new()
+
+        #[cfg(target_os = "linux")]
+        {
+            Notification::new()
             .summary(&title)
             .body(&message)
             .show()
             .expect("Error showing notification")
             .icon("/usr/share/pixmaps/whiskers-launcher.png");
+        }
+        
+        #[cfg(target_os = "windows")]
+        {
+            Notification::new()
+                .summary(&title)
+                .body(&message)
+                .show()
+                .expect("Error showing notification")
+        }
     }
 }
 

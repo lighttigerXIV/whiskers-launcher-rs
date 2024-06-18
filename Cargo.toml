@@ -1,9 +1,9 @@
 [package]
 name = "whiskers-launcher-rs"
-version = "1.0.0"
+version = "2.0.0"
 edition = "2021"
-description = "A crate containing all necessary code related to Whiskers Launcher"
-repository = "https://github.com/lighttigerXIV/whiskers-launcher-rs"
+description = "A crate containing core functionality for Whiskers Launcher and it's extensions"
+repository = "https://github.com/Whiskers-Apps/whiskers-launcher-rs"
 license = "MIT"
 keywords = ["productivity"]
 
