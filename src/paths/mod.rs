@@ -32,8 +32,8 @@ pub fn get_app_resources_icons_dir() -> PathBuf {
 pub fn get_indexing_dir() -> PathBuf {
     match env::consts::OS {
         "windows" => {
-            let mut path = Path::new(&env::var("LOCALAPPDATA").unwrap()).to_owned();
-            path.push("whiskers-launcher-indexing");
+            let mut path = get_home_dir();
+            path.push(".whiskers-launcher-indexing");
             path
         }
         _ => {
