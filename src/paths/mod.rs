@@ -33,7 +33,7 @@ pub fn get_indexing_dir() -> PathBuf {
     match env::consts::OS {
         "windows" => {
             let mut path = get_home_dir();
-            path.push(".whiskers-launcher-indexing");
+            path.push(".whiskers-launcher/indexing");
             path
         }
         _ => {
