@@ -1,16 +1,15 @@
 use std::fs;
 
 #[cfg(target_os = "linux")]
-use {
-    crate::paths::get_autostart_dir,
-    std::os::unix::fs::PermissionsExt,
-};
+use {crate::paths::get_autostart_dir, std::os::unix::fs::PermissionsExt};
 
-use crate::{paths::get_settings_path, settings::{get_default_settings, Settings}};
+use crate::{
+    paths::get_settings_path,
+    settings::{get_default_settings, Settings},
+};
 
 #[cfg(target_os = "windows")]
 use crate::paths::get_app_resources_dir;
-
 
 pub fn get_settings() -> Settings {
     let settings_path = get_settings_path();
@@ -21,7 +20,11 @@ pub fn get_settings() -> Settings {
     }
 
     if !settings_path.exists() {
-        write_settings(get_default_settings());
+        fs::write(
+            &settings_path,
+            bincode::serialize(&get_default_settings()).expect("Error serializing settings"),
+        )
+        .expect("Error writing settings");
     }
 
     let settings_bytes = fs::read(get_settings_path()).expect("Error reading settings");
