@@ -1,13 +1,15 @@
+use std::fs;
+
 #[cfg(target_os = "linux")]
 use {
     crate::paths::get_autostart_dir,
-    std::{fs, os::unix::fs::PermissionsExt},
+    std::os::unix::fs::PermissionsExt,
 };
 
 use crate::{paths::get_settings_path, settings::{get_default_settings, Settings}};
 
 #[cfg(target_os = "windows")]
-use crate::get_app_resources_dir;
+use crate::paths::get_app_resources_dir;
 
 
 pub fn get_settings() -> Settings {
