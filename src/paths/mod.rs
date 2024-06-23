@@ -1,191 +1,176 @@
 use dirs::home_dir;
-use std::env;
 use std::path::{Path, PathBuf};
+use std::env;
 
-pub fn get_local_dir() -> Option<PathBuf> {
+pub fn get_app_dir() -> PathBuf {
     match env::consts::OS {
         "windows" => {
             let mut path = Path::new(&env::var("APPDATA").unwrap()).to_owned();
-            path.push("com-lighttigerxiv-whiskers-launcher");
-
-            Some(path)
+            path.push("com-whiskersapps-launcher");
+            path
         }
-        //Unix Systems
         _ => {
-            let mut path = home_dir().unwrap();
-            path.push(".local/share/com-lighttigerxiv-whiskers-launcher");
-
-            Some(path)
+            let mut path = get_home_dir();
+            path.push(".local/share/com-whiskersapps-launcher");
+            path
         }
     }
 }
 
-pub fn get_temp_dir() -> Option<PathBuf> {
+pub fn get_app_resources_dir() -> PathBuf {
+    let mut path = get_app_dir();
+    path.push("resources");
+    path
+}
+
+pub fn get_app_resources_icons_dir() -> PathBuf {
+    let mut path = get_app_resources_dir();
+    path.push("icons");
+    path
+}
+
+pub fn get_indexing_dir() -> PathBuf {
     match env::consts::OS {
         "windows" => {
-            let mut tmp_path = Path::new(&env::var("TEMP").unwrap()).to_owned();
-            tmp_path.push("whiskers-launcher-runtime");
-
-            Some(tmp_path)
+            let mut path = get_home_dir();
+            path.push(".whiskers-launcher/indexing");
+            path
         }
-        //Unix Systems
-        _ => Some(Path::new("/tmp/whiskers-launcher-runtime").to_owned()),
-    }
-}
-
-pub fn get_home_dir() -> Option<PathBuf> {
-    home_dir()
-}
-
-pub fn get_extension_results_path() -> Option<PathBuf> {
-    let mut path = match get_temp_dir() {
-        None => {
-            return None;
-        }
-        Some(path) => path,
-    };
-
-    path.push("extension_results.json");
-    Some(path)
-}
-
-pub fn get_extension_context_path() -> Option<PathBuf> {
-    let mut path = get_temp_dir()?;
-
-    path.push("extension_context.json");
-    Some(path)
-}
-
-pub fn get_dialog_results_path() -> Option<PathBuf> {
-    let mut path = match get_temp_dir() {
-        None => {
-            return None;
-        }
-        Some(path) => path,
-    };
-
-    path.push("dialog_results.json");
-    Some(path)
-}
-
-pub fn get_user_extensions_dir() -> Option<PathBuf> {
-    let mut path = get_local_dir()?;
-    path.push("UserExtensions");
-    Some(path)
-}
-
-pub fn get_indexing_dir() -> Option<PathBuf> {
-    let mut path = get_local_dir()?;
-    path.push("Indexing");
-    Some(path)
-}
-
-pub fn get_indexing_shortcuts_dir() -> Option<PathBuf> {
-    let mut path = get_indexing_dir()?;
-    path.push("Shortcuts");
-    Some(path)
-}
-
-pub fn get_indexing_icons_dir() -> Option<PathBuf> {
-    let mut path = get_indexing_dir()?;
-    path.push("Icons");
-    Some(path)
-}
-
-pub fn get_indexing_extensions_path() -> Option<PathBuf> {
-    let mut path = get_indexing_dir()?;
-    path.push("extensions.json");
-    Some(path)
-}
-
-pub fn get_indexing_apps_path() -> Option<PathBuf> {
-    let mut path = get_indexing_dir()?;
-    path.push("apps.json");
-    Some(path)
-}
-
-pub fn get_app_resources_dir() -> Option<PathBuf> {
-    let mut path = get_local_dir()?;
-    path.push("AppResources");
-    Some(path)
-}
-
-pub fn get_app_resources_icons_dir() -> Option<PathBuf> {
-    let mut path = get_app_resources_dir()?;
-    path.push("Icons");
-    Some(path)
-}
-
-pub fn get_settings_path() -> Option<PathBuf> {
-    match env::consts::OS {
-        "windows" => {
-            let mut path = get_local_dir()?;
-            path.push("settings.json");
-
-            Some(path)
-        }
-        //Unix Systems
         _ => {
-            let mut path = get_home_dir()?;
-            path.push(".config/whiskers-launcher/settings.json");
-
-            Some(path)
+            let mut path = get_home_dir();
+            path.push(".cache/whiskers-launcher-indexing");
+            path
         }
     }
 }
 
-pub fn get_autostart_path() -> Option<PathBuf> {
-    match env::consts::OS {
-        "linux" => {
-            let mut path = get_home_dir()?;
-            path.push(".config/autostart");
+pub fn get_indexing_shortcuts_dir() -> PathBuf {
+    let mut path = get_indexing_dir();
+    path.push("shortcuts");
+    path
+}
 
-            return Some(path);
-        }
+pub fn get_indexing_icons_dir() -> PathBuf {
+    let mut path = get_indexing_dir();
+    path.push("icons");
+    path
+}
+
+pub fn get_indexing_shortcuts_path() -> PathBuf {
+    let mut path = get_indexing_dir();
+    path.push("shortcuts.bin");
+    path
+}
+
+pub fn get_indexing_extensions_path() -> PathBuf {
+    let mut path = get_indexing_dir();
+    path.push("extensions.bin");
+    path
+}
+
+pub fn get_indexing_apps_path() -> PathBuf {
+    let mut path = get_indexing_dir();
+    path.push("apps.bin");
+    path
+}
+
+pub fn get_api_dir() -> PathBuf {
+    match env::consts::OS {
         "windows" => {
-            let mut path = Path::new(&env::var("APPDATA").map_err(|_| ()).unwrap()).to_owned();
+            let mut path = Path::new(&env::var("TEMP").unwrap()).to_owned();
+            path.push("whiskers-launcher-api");
+            path
+        }
+        _ => Path::new("/tmp/whiskers-launcher-api").to_owned(),
+    }
+}
+
+pub fn get_home_dir() -> PathBuf {
+    home_dir().unwrap()
+}
+
+pub fn get_extension_response_path() -> PathBuf {
+    let mut path = get_api_dir();
+    path.push("extension-response.bin");
+    path
+}
+
+pub fn get_extension_request_path() -> PathBuf {
+    let mut path = get_api_dir();
+    path.push("extension-request.bin");
+    path
+}
+
+pub fn get_dialog_response_path() -> PathBuf {
+    let mut path = get_api_dir();
+    path.push("dialog-response.bin");
+    path
+}
+
+pub fn get_dialog_request_path() -> PathBuf {
+    let mut path = get_api_dir();
+    path.push("dialog-request.bin");
+    path
+}
+
+pub fn get_extensions_dir() -> PathBuf {
+    let mut path = get_app_dir();
+    path.push("extensions");
+    path
+}
+
+pub fn get_settings_path() -> PathBuf {
+    match env::consts::OS {
+        "windows" => {
+            let mut path = get_app_dir();
+            path.push("settings.bin");
+            path
+        }
+        _ => {
+            let mut path = get_home_dir();
+            path.push(".config/whiskers-launcher/settings.bin");
+            path
+        }
+    }
+}
+
+pub fn get_autostart_dir() -> PathBuf {
+    match env::consts::OS {
+        "windows" => {
+            let mut path =
+                Path::new(&env::var("APPDATA").expect("Error getting APPDATA directory"))
+                    .to_owned();
             path.push("Microsoft\\Windows\\Start Menu\\Programs\\Startup");
-
-            return Some(path);
+            path
         }
-        _ => None,
+        _ => {
+            let mut path = get_home_dir();
+            path.push(".config/autostart");
+            return path;
+        }
     }
 }
 
-pub fn get_extension_dialog_action_path() -> Option<PathBuf> {
-    let mut path = get_temp_dir()?;
-    path.push("extension_dialog_action.json");
-
-    Some(path)
+pub fn get_stores_dir() -> PathBuf {
+    let mut path = get_app_dir();
+    path.push("stores");
+    path
 }
 
-pub fn get_extension_dialog_response_path() -> Option<PathBuf> {
-    let mut path = get_temp_dir()?;
-    path.push("extension_dialog_response.json");
-
-    Some(path)
-}
-
-pub fn get_store_cache_dir() -> Option<PathBuf> {
-    let mut path = get_local_dir()?;
-    path.push("StoreCache");
-    Some(path)
-}
-
-pub fn get_cached_themes_store_path() -> Option<PathBuf> {
-    let mut path = get_store_cache_dir()?;
-    path.push("themes.json");
-    Some(path)
-}
-
-pub fn get_cached_extensions_store_path() -> Option<PathBuf> {
-    let mut path = get_store_cache_dir()?;
+pub fn get_extensions_store_path() -> PathBuf{
+    let mut path = get_stores_dir();
     path.push("extensions.json");
-    Some(path)
+    path
 }
 
-pub fn get_recent_apps_path() -> Option<PathBuf>{
-    let mut path = get_local_dir()?;
-    path.push("recent-apps.json");
-    Some(path)
+pub fn get_themes_store_path() -> PathBuf{
+    let mut path = get_stores_dir();
+    path.push("themes.json");
+    path
+}
+
+pub fn get_recent_apps_path() -> PathBuf{
+    let mut path = get_app_dir();
+    path.push("recent-apps.bin");
+    path
 }

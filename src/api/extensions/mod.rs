@@ -1,35 +1,44 @@
-use crate::actions;
-use crate::paths::{
-    get_extension_context_path, get_extension_dialog_action_path,
-    get_extension_dialog_response_path, get_extension_results_path, get_user_extensions_dir,
-};
-use crate::results::WhiskersResult;
-use crate::settings::{get_settings, ExtensionSetting};
 use serde::{Deserialize, Serialize};
-use std::fs::read_to_string;
-use std::path::PathBuf;
-use std::process::exit;
-use std::{fs, io};
+use std::{fs, path::PathBuf, process::exit};
 use walkdir::WalkDir;
 
-use self::manifest::Manifest;
+use crate::{
+    action::DialogAction,
+    extension::Extension,
+    paths::{
+        get_dialog_request_path, get_extension_request_path, get_extension_response_path,
+        get_extensions_dir, get_indexing_extensions_path,
+    },
+    result::WLResult,
+    settings::ExtensionSetting,
+};
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Context {
-    pub action: Action,
-    pub search_text: Option<String>,
+use super::settings::{get_settings, write_settings};
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ExtensionRequest {
+    pub extension_id: String,
+    pub action_context: ActionContext,
     pub extension_action: Option<String>,
-    pub custom_args: Vec<String>,
+    pub search_text: Option<String>,
+    pub args: Option<Vec<String>>,
 }
 
-impl Context {
-    pub fn new(action: Action) -> Self {
-        return Self {
-            action,
-            search_text: None,
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum ActionContext {
+    ResultsRequest,
+    RunAction,
+}
+
+impl ExtensionRequest {
+    pub fn new(extension_id: impl Into<String>, action_context: ActionContext) -> Self {
+        Self {
+            extension_id: extension_id.into(),
+            action_context,
             extension_action: None,
-            custom_args: vec![],
-        };
+            search_text: None,
+            args: None,
+        }
     }
 
     pub fn search_text(&mut self, search_text: impl Into<String>) -> Self {
@@ -42,55 +51,29 @@ impl Context {
         self.to_owned()
     }
 
-    pub fn custom_args(&mut self, custom_args: Vec<String>) -> Self {
-        self.custom_args = custom_args;
+    pub fn args(&mut self, args: Vec<String>) -> Self {
+        self.args = Some(args.into());
         self.to_owned()
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub enum Action {
-    GetResults,
-    RunAction,
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ExtensionResponse {
+    pub results: Vec<WLResult>,
+    pub args: Option<Vec<String>>,
 }
 
-pub mod manifest {
-    use serde::{Deserialize, Serialize};
-
-    #[derive(Serialize, Deserialize, Debug, Clone)]
-    pub struct Manifest {
-        pub id: String,
-        pub name: String,
-        pub version_name: String,
-        pub version_code: usize,
-        pub description: String,
-        pub os: Vec<String>,
-        pub keyword: String,
-        pub settings: Option<Vec<Setting>>,
+impl ExtensionResponse {
+    pub fn new(results: Vec<WLResult>) -> Self {
+        Self {
+            results,
+            args: None,
+        }
     }
 
-    #[derive(Serialize, Deserialize, Debug, Clone)]
-    pub struct Setting {
-        pub id: String,
-        pub title: String,
-        pub description: String,
-        pub setting_type: String,
-        pub default_value: String,
-        pub os: Vec<String>,
-        pub select_options: Option<Vec<SelectOption>>,
-        pub show_conditions: Option<Vec<ShowCondition>>,
-    }
-
-    #[derive(Serialize, Deserialize, Debug, Clone)]
-    pub struct SelectOption {
-        pub id: String,
-        pub text: String,
-    }
-
-    #[derive(Serialize, Deserialize, Debug, Clone)]
-    pub struct ShowCondition {
-        pub setting_id: String,
-        pub setting_value: String,
+    pub fn args(&mut self, args: Vec<String>) -> Self {
+        self.args = Some(args.into());
+        self.to_owned()
     }
 }
 
@@ -101,16 +84,12 @@ pub struct DialogResponse {
 }
 
 impl DialogResponse {
-    pub fn new(results: Vec<DialogResult>, args: Option<Vec<String>>) -> Self {
-        return Self { results, args };
-    }
+    pub fn get_result_value(self, field_id: impl Into<String>) -> Option<String> {
+        let field_id = field_id.into();
 
-    pub fn get_result_value(&self, id: impl Into<String>) -> Option<String> {
-        let id = id.into();
-
-        for result in self.results.to_owned(){
-            if result.id == id {
-                return Some(result.value);
+        for result in self.results {
+            if result.field_id == field_id {
+                return Some(result.field_value);
             }
         }
 
@@ -120,165 +99,177 @@ impl DialogResponse {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct DialogResult {
-    pub id: String,
-    pub value: String,
+    pub field_id: String,
+    pub field_value: String,
+    pub args: Option<Vec<String>>,
 }
 
-impl DialogResult {
-    pub fn new(id: impl Into<String>, value: impl Into<String>) -> Self {
-        return Self {
-            id: id.into(),
-            value: value.into(),
-        };
+pub fn index_extensions() {
+    let mut extensions = Vec::<Extension>::new();
+    let extensions_dir = get_extensions_dir();
+    let indexing_extensions_path = get_indexing_extensions_path();
+    let mut settings = get_settings();
+
+    if !indexing_extensions_path.parent().unwrap().exists() {
+        fs::create_dir_all(&indexing_extensions_path.parent().unwrap())
+            .expect("Error creating directory");
     }
 
-    /// Returns true if the value is "true". Any other case it will return a false
-    pub fn as_boolean(self) -> bool {
-        return self.value == "true";
+    if !extensions_dir.exists() {
+        fs::create_dir_all(&extensions_dir).expect("Error creating extensions directory");
     }
-}
-
-// =====================================================
-// Functions
-// =====================================================
-
-pub fn get_extension_dir(extension_id: impl Into<String>) -> Option<PathBuf> {
-    let extensions_dir = get_user_extensions_dir()?;
-    let id = extension_id.into();
 
     for entry in WalkDir::new(&extensions_dir) {
-        let entry = entry.ok()?;
+        if entry.is_ok() {
+            let entry = entry.unwrap();
+            let name = entry.file_name();
 
-        if entry.file_name() == "manifest.json" {
-            if let Ok(manifest) =
-                serde_json::from_str::<Manifest>(&fs::read_to_string(&entry.path()).ok()?)
-            {
-                if manifest.id == id {
-                    return Some(entry.path().parent()?.to_owned());
+            if name == "manifest.json" {
+                let json =
+                    fs::read_to_string(entry.path()).expect("Error getting manifest content");
+
+                if let Ok(extension) = serde_json::from_str::<Extension>(&json) {
+                    extensions.push(extension.to_owned());
+
+                    let has_keyword = settings
+                        .extensions
+                        .iter()
+                        .any(|es| es.extension_id == extension.id && es.setting_id == "keyword");
+
+                    if !has_keyword {
+                        settings.extensions.push(ExtensionSetting {
+                            extension_id: extension.id.to_owned(),
+                            setting_id: String::from("keyword"),
+                            setting_value: extension.keyword.to_owned(),
+                        })
+                    }
+
+                    if let Some(extension_settings) = extension.settings {
+                        for extension_setting in extension_settings {
+                            let has_setting = settings.extensions.iter().any(|es| {
+                                es.extension_id == extension.id
+                                    && es.setting_id == extension_setting.id
+                            });
+
+                            if !has_setting {
+                                settings.extensions.push(ExtensionSetting {
+                                    extension_id: extension.id.to_owned(),
+                                    setting_id: extension_setting.id.to_owned(),
+                                    setting_value: extension_setting.default_value.to_owned(),
+                                })
+                            }
+                        }
+                    }
                 }
             }
         }
     }
 
-    None
+    write_settings(settings);
+
+    let bytes = bincode::serialize(&extensions).expect("Error serializing extensions");
+    fs::write(&get_indexing_extensions_path(), &bytes).expect("Error writing extensions");
 }
 
-pub fn get_extension_manifest(extension_id: impl Into<String>) -> Option<Manifest> {
-    let extensions_dir = get_user_extensions_dir()?;
-    let id = extension_id.into();
+pub fn get_extensions() -> Vec<Extension> {
+    let path = get_indexing_extensions_path();
+    let bytes = fs::read(path).expect("Error reading extensions");
 
-    for entry in WalkDir::new(&extensions_dir) {
-        let entry = entry.ok()?;
-
-        if entry.file_name() == "manifest.json" {
-            if let Ok(manifest) =
-                serde_json::from_str::<Manifest>(&fs::read_to_string(&entry.path()).ok()?)
-            {
-                if manifest.id == id {
-                    return Some(manifest);
-                }
-            }
-        }
+    match bincode::deserialize(&bytes) {
+        Ok(extensions) => extensions,
+        Err(_) => Vec::new(),
     }
-
-    None
 }
 
-pub fn send_extension_context(context: Context) -> io::Result<()> {
-    let file_path = get_extension_context_path().ok_or(()).unwrap();
-    let json_context = serde_json::to_string(&context).map_err(|_| ()).unwrap();
-    fs::write(file_path, &json_context).map_err(|_| ()).unwrap();
-
-    Ok(())
+pub fn write_extension_request(request: ExtensionRequest) {
+    let bytes = bincode::serialize(&request).expect("Error serializing request");
+    fs::write(&get_extension_request_path(), &bytes).expect("Error writing request");
 }
 
-pub fn get_extension_context() -> Option<Context> {
-    let file_path = get_extension_context_path()?;
-    let file_content = read_to_string(&file_path).ok()?;
-    let deserialized_context: Context = serde_json::from_str(&file_content).ok()?;
-
-    Some(deserialized_context)
+pub fn get_extension_request() -> ExtensionRequest {
+    let bytes = fs::read(get_extension_request_path()).expect("Error reading extension request");
+    let request = bincode::deserialize(&bytes).expect("Error deserializing extension request");
+    request
 }
 
-pub fn send_extension_results(results: Vec<WhiskersResult>) {
-    let file_path = get_extension_results_path().unwrap();
-    let json_results = serde_json::to_string(&results).unwrap();
-    fs::write(file_path, &json_results).unwrap();
+pub fn write_extension_response(response: ExtensionResponse) {
+    let bytes = bincode::serialize(&response).expect("Error serializing response");
+    fs::write(&get_extension_response_path(), bytes).expect("Error writing extension response");
+}
 
+pub fn get_extension_response() -> ExtensionResponse {
+    let bytes = fs::read(get_extension_response_path()).expect("Error reading extension response");
+    let response = bincode::deserialize(&bytes).expect("Error deserializing extension response");
+    response
+}
+
+pub fn write_dialog_request(request: DialogAction) {
+    let bytes = bincode::serialize(&request).expect("Error serializing request");
+    fs::write(&get_dialog_request_path(), &bytes).expect("Error writing request");
+}
+
+pub fn get_dialog_request() -> DialogAction {
+    let bytes = fs::read(get_dialog_request_path()).expect("Error reading dialog request");
+    let request = bincode::deserialize(&bytes).expect("Error deserializing dialog request");
+    request
+}
+
+pub fn write_dialog_response(response: DialogResponse) {
+    let bytes = bincode::serialize(&response).expect("Error serializing response");
+    fs::write(get_extension_response_path(), &bytes).expect("Error writing response");
+}
+
+pub fn get_dialog_response() -> DialogResponse {
+    let bytes = fs::read(get_extension_response_path()).expect("Error reading dialog response");
+    let response = bincode::deserialize(&bytes).expect("Error deserializing dialog response");
+    response
+}
+
+pub fn send_response(results: Vec<WLResult>) {
+    let response = ExtensionResponse::new(results);
+    write_extension_response(response);
     exit(0);
 }
 
-pub fn get_extension_results() -> Option<Vec<WhiskersResult>> {
-    let file_path = get_extension_results_path()?;
-    let file_content = read_to_string(&file_path).ok()?;
-    let extension_results = serde_json::from_str(&file_content).ok()?;
-
-    Some(extension_results)
-}
-
-pub fn get_extension_settings(extension_id: impl Into<String>) -> Option<Vec<ExtensionSetting>> {
-    let settings = get_settings()?;
+pub fn get_extension_dir(extension_id: impl Into<String>) -> Option<PathBuf> {
     let extension_id = extension_id.into();
+    let extensions_dir = get_extensions_dir();
 
-    for extension in settings.extensions {
-        if extension.id == extension_id {
-            return Some(extension.settings);
+    for entry in WalkDir::new(&extensions_dir) {
+        if entry.is_ok() {
+            let entry = entry.unwrap();
+            let name = entry.file_name();
+
+            if name == "manifest.json" {
+                let json =
+                    fs::read_to_string(entry.path()).expect("Error getting manifest content");
+
+                if let Ok(extension) = serde_json::from_str::<Extension>(&json) {
+                    if extension_id == extension.id {
+                        return Some(entry.path().parent().unwrap().to_owned());
+                    }
+                }
+            }
         }
     }
 
-    None
+    return None;
 }
 
 pub fn get_extension_setting(
     extension_id: impl Into<String>,
     setting_id: impl Into<String>,
 ) -> Option<String> {
-    let settings = get_settings()?;
-    let extension_id = extension_id.into();
     let setting_id = setting_id.into();
+    let extension_id = extension_id.into();
 
-    for extension in settings.extensions {
-        if extension.id == extension_id {
-            for extension_setting in extension.settings {
-                if extension_setting.id == setting_id {
-                    return Some(extension_setting.value);
-                }
-            }
+    let settings = get_settings();
+
+    for setting in settings.extensions {
+        if setting.extension_id == extension_id && setting.setting_id == setting_id {
+            return Some(setting.setting_value);
         }
     }
 
     None
-}
-
-pub fn send_extension_dialog_action(action: actions::Dialog) {
-    let path = get_extension_dialog_action_path().expect("Error getting action path");
-
-    let action_json = serde_json::to_string(&action).expect("Error converting action to a json");
-
-    fs::write(&path, &action_json).expect("Error writing action");
-}
-
-pub fn get_extension_dialog_action() -> Option<actions::Dialog> {
-    let path = get_extension_dialog_action_path().expect("Error getting action path");
-    let action_json = fs::read_to_string(&path).expect("Error getting action file content");
-    let action: actions::Dialog = serde_json::from_str(&action_json).expect("Error getting action");
-
-    return Some(action);
-}
-
-pub fn send_extension_dialog_response(response: DialogResponse) {
-    let path = get_extension_dialog_response_path().expect("Error getting response path");
-
-    let response_json =
-        serde_json::to_string(&response).expect("Error converting response to a json");
-
-    fs::write(&path, &response_json).expect("Error writing response");
-}
-
-pub fn get_extension_dialog_response() -> Option<DialogResponse> {
-    let path = get_extension_dialog_response_path()?;
-    let response_json = fs::read_to_string(&path).ok()?;
-    let results: DialogResponse = serde_json::from_str(&response_json).ok()?;
-
-    return Some(results);
 }
