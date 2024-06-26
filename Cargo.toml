@@ -19,3 +19,4 @@ fuzzy-matcher = "0.3.7"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 powershell_script = "1.1.0"
+mslnk = "0.1.8"

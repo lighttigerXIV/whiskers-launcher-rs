@@ -1,10 +1,12 @@
-use std::fs;
+use std::{env, fs, path::Path};
+
+use mslnk::ShellLink;
 
 #[cfg(target_os = "linux")]
 use {crate::paths::get_autostart_dir, std::os::unix::fs::PermissionsExt};
 
 use crate::{
-    paths::get_settings_path,
+    paths::{get_app_dir, get_autostart_dir, get_settings_path},
     settings::{get_default_settings, Settings},
 };
 
@@ -78,17 +80,21 @@ Exec=whiskers-launcher-companion"#;
 
         #[cfg(target_os = "windows")]
         {
-            let mut path = get_app_resources_dir();
-            path.push("scripts");
-            path.push(if settings.auto_start {
-                "enable-autostart.ps1"
+            let mut shortcut_path = get_autostart_dir();
+            shortcut_path.push("Whiskers-Launcher.lnk");
+
+            if settings.auto_start {
+                let mut target_path = get_app_dir();
+                target_path.push("whiskers-launcher-companion.exe");
+
+                let link = ShellLink::new(target_path).expect("Error initializing link");
+
+                link.create_lnk(shortcut_path).expect("Error creating link");
             } else {
-                "disable-autostart.ps1"
-            });
-
-            let script_content = fs::read_to_string(&path).expect("Error reading script");
-
-            powershell_script::run(&script_content).expect("Error running script");
+                if shortcut_path.exists() {
+                    fs::remove_file(shortcut_path).expect("Error removing shortcut");
+                }
+            }
         }
     }
 
