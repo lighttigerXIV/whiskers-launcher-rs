@@ -1,17 +1,19 @@
-use std::{env, fs, path::Path};
-
-use mslnk::ShellLink;
+use std::fs;
 
 #[cfg(target_os = "linux")]
-use {crate::paths::get_autostart_dir, std::os::unix::fs::PermissionsExt};
+use std::os::unix::fs::PermissionsExt;
 
 use crate::{
-    paths::{get_app_dir, get_autostart_dir, get_settings_path},
+    paths::{get_autostart_dir, get_settings_path},
     settings::{get_default_settings, Settings},
 };
 
 #[cfg(target_os = "windows")]
-use crate::paths::get_app_resources_dir;
+use {
+    crate::paths::{get_app_dir, get_app_resources_dir},
+    mslnk::ShellLink,
+    std::{env, path::Path}
+};
 
 pub fn get_settings() -> Settings {
     let settings_path = get_settings_path();
